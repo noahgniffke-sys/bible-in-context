@@ -1,0 +1,372 @@
+@import "tailwindcss";
+
+/* Toast slide-in animation */
+@keyframes slide-in-down {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-in-down {
+  animation: slide-in-down 0.25s ease-out;
+}
+
+/* ============================================ */
+/* DARK THEME (default) — Noah                   */
+/* ============================================ */
+:root, [data-theme="dark"] {
+  /* Backgrounds */
+  --bg-primary: #0a0a0a;
+  --bg-surface: #111111;
+  --bg-elevated: #1a1a1a;
+  --bg-card: #141414;
+
+  /* Blood red accents */
+  --accent-primary: #8b0000;
+  --accent-secondary: #c41e1e;
+  --accent-light: #e05555;
+  --accent-glow: rgba(139, 0, 0, 0.4);
+
+  /* Parchment text */
+  --text-primary: #e8dcc8;
+  --text-secondary: #b0a48e;
+  --text-muted: #7a7060;
+
+  /* Borders */
+  --border-primary: #2a2420;
+  --border-subtle: #1e1a16;
+
+  /* Special accents */
+  --gold-accent: #c9a84c;
+  --gold-glow: rgba(201, 168, 76, 0.4);
+
+  /* Verse highlight colors (25% opacity) */
+  --highlight-red: rgba(139, 0, 0, 0.25);
+  --highlight-orange: rgba(139, 74, 0, 0.25);
+  --highlight-yellow: rgba(201, 168, 76, 0.25);
+  --highlight-green: rgba(45, 90, 39, 0.25);
+  --highlight-blue: rgba(30, 58, 95, 0.25);
+  --highlight-purple: rgba(74, 35, 90, 0.25);
+
+  /* Status */
+  --accent-error: #ff4444;
+  --accent-success: #4caf50;
+  --accent-warning: #ff9800;
+
+  /* Scrollbar */
+  --scrollbar-thumb: #2a2420;
+  --scrollbar-hover: #8b0000;
+}
+
+/* ============================================ */
+/* LIGHT THEME — Allie                           */
+/* ============================================ */
+[data-theme="light"] {
+  /* Backgrounds */
+  --bg-primary: #faf8f0;
+  --bg-surface: #f5f0e4;
+  --bg-elevated: #ffffff;
+  --bg-card: #fffef8;
+
+  /* Pastoral accents */
+  --accent-primary: #5a7c3a;
+  --accent-secondary: #7ba05b;
+  --accent-light: #a3c47a;
+  --accent-glow: rgba(90, 124, 58, 0.3);
+
+  /* Warm text */
+  --text-primary: #2c2417;
+  --text-secondary: #5a4e3c;
+  --text-muted: #8a7e6c;
+
+  /* Borders */
+  --border-primary: #d4c9b0;
+  --border-subtle: #e8dfc8;
+
+  /* Special accents */
+  --gold-accent: #b8960c;
+  --gold-glow: rgba(184, 150, 12, 0.3);
+
+  /* Pink accent */
+  --pink-accent: #d4a0a0;
+
+  /* Verse highlight colors (35% opacity for light bg) */
+  --highlight-red: rgba(220, 100, 100, 0.35);
+  --highlight-orange: rgba(220, 160, 80, 0.35);
+  --highlight-yellow: rgba(240, 210, 90, 0.35);
+  --highlight-green: rgba(120, 190, 100, 0.35);
+  --highlight-blue: rgba(100, 160, 220, 0.35);
+  --highlight-purple: rgba(170, 120, 200, 0.35);
+
+  /* Status */
+  --accent-error: #d32f2f;
+  --accent-success: #388e3c;
+  --accent-warning: #f57c00;
+
+  /* Scrollbar */
+  --scrollbar-thumb: #d4c9b0;
+  --scrollbar-hover: #5a7c3a;
+}
+
+/* ============================================ */
+/* BASE STYLES                                  */
+/* ============================================ */
+
+body {
+  margin: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================ */
+/* GLOW & GRADIENT EFFECTS                      */
+/* ============================================ */
+
+.glow-accent {
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.glow-gold {
+  box-shadow: 0 0 20px var(--gold-glow);
+}
+
+.text-glow-accent {
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+.text-accent-gradient {
+  background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================ */
+/* SCROLLBAR                                    */
+/* ============================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover);
+}
+
+/* ============================================ */
+/* ANIMATIONS                                   */
+/* ============================================ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up {
+  animation: fadeInUp 0.15s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.scale-in {
+  animation: scaleIn 0.15s ease-out;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.slide-in-right {
+  animation: slideInRight 0.15s ease-out;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.slide-in-left {
+  animation: slideInLeft 0.15s ease-out;
+}
+
+@keyframes tabSlide {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.tab-indicator {
+  animation: tabSlide 0.1s ease-out;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes bounceIn {
+  0% { opacity: 0; transform: scale(0.3); }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.bounce-in {
+  animation: bounceIn 0.2s ease-out;
+}
+
+@keyframes pullRefreshSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.pull-refresh-spin {
+  animation: pullRefreshSpin 0.8s linear infinite;
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { transform: scale(1.02); box-shadow: 0 0 10px 2px var(--accent-glow); }
+}
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s ease-in-out infinite;
+}
+
+/* ============================================ */
+/* UTILITY CLASSES                              */
+/* ============================================ */
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.card-hover {
+  transition: transform 75ms ease, box-shadow 75ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.press-effect {
+  transition: transform 50ms ease;
+}
+.press-effect:active {
+  transform: scale(0.97);
+}
+
+/* ============================================ */
+/* MOBILE TOUCH OPTIMIZATIONS                   */
+/* ============================================ */
+
+input, textarea, [contenteditable="true"], .verse-text {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+}
+
+button, a, [role="button"], .clickable {
+  min-height: 44px;
+  min-width: 44px;
+  position: relative;
+}
+
+button, [role="button"], .tap-feedback, a {
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+}
+
+button:active, [role="button"]:active, .tap-feedback:active {
+  transform: scale(0.95) !important;
+  transition: transform 50ms ease-out !important;
+}
+
+nav a:active {
+  transform: none;
+}
+
+.transition-all, .transition-colors, .transition-opacity, .transition-transform {
+  transition-duration: 75ms !important;
+}
+
+button:active, a:active {
+  transition-duration: 0ms !important;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  *:hover {
+    transform: none !important;
+  }
+  button:active, a:active, [role="button"]:active, .card-hover:active {
+    transform: scale(0.95) !important;
+    transition: none !important;
+  }
+}
+
+nav a {
+  touch-action: manipulation;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+.overflow-auto, .overflow-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+
+/* ============================================ */
+/* SAFE AREA FOR NOTCHED DEVICES                */
+/* ============================================ */
+
+@supports (padding: env(safe-area-inset-top)) {
+  header {
+    padding-top: calc(12px + env(safe-area-inset-top)) !important;
+  }
+  nav {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+}
