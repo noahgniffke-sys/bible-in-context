@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import useLocalStorage from '../hooks/useLocalStorage'
+import usePlanSync from '../hooks/usePlanSync'
 import { parseVerseRef, formatVerseRef } from '../lib/bible-books'
 import BackButton from '../components/BackButton'
 import ErrorBanner from '../components/ErrorBanner'
@@ -20,8 +20,7 @@ function PlanDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const [subscriptions, setSubscriptions] = useLocalStorage('bic_plan_subs_local', [])
-  const [progress, setProgress] = useLocalStorage('bic_plan_progress_local', {})
+  const { subscriptions, progress, subscribe: doSubscribe, unsubscribe: doUnsubscribe, toggleDayComplete: doToggleDay } = usePlanSync()
 
   const subscription = subscriptions.find(s => s.plan_id === planId)
   const planProgress = progress[planId] || { completedDays: [] }
@@ -48,37 +47,21 @@ function PlanDetail() {
     }
   }
 
-  function subscribe() {
+  async function subscribe() {
     triggerHaptic(HapticStyle.SUCCESS)
-    setSubscriptions([...subscriptions, {
-      plan_id: planId,
-      current_day: 1,
-      started_at: new Date().toISOString(),
-    }])
+    await doSubscribe(planId)
     toast.success('Plan started!')
   }
 
-  function unsubscribe() {
+  async function unsubscribe() {
     triggerHaptic(HapticStyle.LIGHT)
-    setSubscriptions(subscriptions.filter(s => s.plan_id !== planId))
-    const newProgress = { ...progress }
-    delete newProgress[planId]
-    setProgress(newProgress)
+    await doUnsubscribe(planId)
     toast.info('Unfollowed plan')
   }
 
-  function toggleDayComplete(dayNumber) {
+  async function toggleDayComplete(dayNumber) {
     triggerHaptic(HapticStyle.SUCCESS)
-    const completed = planProgress.completedDays || []
-    const isComplete = completed.includes(dayNumber)
-    const newCompleted = isComplete
-      ? completed.filter(d => d !== dayNumber)
-      : [...completed, dayNumber]
-
-    setProgress({
-      ...progress,
-      [planId]: { completedDays: newCompleted },
-    })
+    await doToggleDay(planId, dayNumber)
   }
 
   if (loading) {

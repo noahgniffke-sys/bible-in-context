@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import useLocalStorage from '../hooks/useLocalStorage'
+import useUserData from '../hooks/useUserData'
+import { useAuth } from '../hooks/useAuth'
 import { parseVerseRef, formatVerseRef } from '../lib/bible-books'
 import { formatTimeAgo } from '../lib/utils'
 import EmptyState from '../components/EmptyState'
@@ -16,12 +17,14 @@ const TOOL_TABS = [
 
 function Notes() {
   const [tab, setTab] = useState('notes')
+  const [query, setQuery] = useState('')
   const navigate = useNavigate()
   const confirm = useConfirm()
+  const { user } = useAuth()
 
-  const [notes, setNotes] = useLocalStorage('bic_notes_local', [])
-  const [highlights, setHighlights] = useLocalStorage('bic_highlights_local', [])
-  const [bookmarks, setBookmarks] = useLocalStorage('bic_bookmarks_local', [])
+  const { items: notes, remove: removeNote, syncing: notesSyncing } = useUserData('notes')
+  const { items: highlights, remove: removeHighlight } = useUserData('highlights')
+  const { items: bookmarks, remove: removeBookmark } = useUserData('bookmarks')
 
   function handleVerseNav(verseRef) {
     triggerHaptic(HapticStyle.LIGHT)
@@ -40,35 +43,70 @@ function Notes() {
     })
     if (yes) {
       triggerHaptic(HapticStyle.ERROR)
-      setNotes(notes.filter(n => n.id !== id))
+      removeNote(id)
     }
   }
 
-  async function handleDeleteBookmark(id) {
+  function handleDeleteBookmark(id) {
     triggerHaptic(HapticStyle.LIGHT)
-    setBookmarks(bookmarks.filter(b => b.id !== id))
+    removeBookmark(id)
   }
 
-  async function handleDeleteHighlight(id) {
+  function handleDeleteHighlight(id) {
     triggerHaptic(HapticStyle.LIGHT)
-    setHighlights(highlights.filter(h => h.id !== id))
+    removeHighlight(id)
   }
 
-  const sortedNotes = [...notes].sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
-  const sortedHighlights = [...highlights].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-  const sortedBookmarks = [...bookmarks].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  const q = query.trim().toLowerCase()
+  const matchesQuery = (text) => !q || (text || '').toLowerCase().includes(q)
+
+  const filteredNotes = useMemo(() => {
+    return notes
+      .filter(n => matchesQuery(n.content) || matchesQuery(n.verse_ref) || matchesQuery(n.verse_text))
+      .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))
+  }, [notes, q])
+
+  const sortedHighlights = useMemo(
+    () => [...highlights].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+    [highlights]
+  )
+  const sortedBookmarks = useMemo(
+    () => [...bookmarks].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+    [bookmarks]
+  )
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Study Tools</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-[var(--text-primary)]">Study Tools</h2>
+        {user && notesSyncing && (
+          <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-secondary)] animate-pulse" />
+            Syncing
+          </span>
+        )}
+      </div>
 
       <TabBar tabs={TOOL_TABS} activeTab={tab} onChange={setTab} />
 
+      {/* Search bar — only on notes tab */}
+      {tab === 'notes' && (
+        <div className="mb-3">
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search your notes..."
+            className="w-full bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-xl px-4 py-2.5 text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent-secondary)]"
+          />
+        </div>
+      )}
+
       {/* Notes tab */}
       {tab === 'notes' && (
-        sortedNotes.length > 0 ? (
+        filteredNotes.length > 0 ? (
           <div className="space-y-3">
-            {sortedNotes.map(note => {
+            {filteredNotes.map(note => {
               const parsed = parseVerseRef(note.verse_ref)
               return (
                 <div key={note.id} className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
@@ -95,13 +133,21 @@ function Notes() {
             })}
           </div>
         ) : (
-          <EmptyState
-            emoji="📝"
-            title="No Notes Yet"
-            description="Tap any verse while reading to add your study notes."
-            actionLabel="Start Reading"
-            actionTo="/bible"
-          />
+          q ? (
+            <EmptyState
+              emoji="🔍"
+              title="No matching notes"
+              description={`No notes matched "${query}". Try a different search.`}
+            />
+          ) : (
+            <EmptyState
+              emoji="📝"
+              title="No Notes Yet"
+              description="Tap any verse while reading to add your study notes."
+              actionLabel="Start Reading"
+              actionTo="/bible"
+            />
+          )
         )
       )}
 

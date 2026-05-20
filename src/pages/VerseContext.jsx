@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getBookById, formatVerseRef, buildVerseRef, parseVerseRef } from '../lib/bible-books'
 import { expandBookNames } from '../lib/utils'
-import { getVerse, getChapter, getTranslation } from '../lib/bible-api'
+import { getVerse, getChapter, getTranslation, getVersesForStrongs } from '../lib/bible-api'
 import { getCrossReferences } from '../lib/tsk'
 import { getStudyNote } from '../lib/study'
 import { getJFBCommentary } from '../lib/jfb'
-import { getStrongsForVerse, getLanguageForBook, adaptWordsToTranslation, generatePhraseByPhrase, detectVerseType } from '../lib/strongs'
+import { getStrongsForVerse, getLanguageForBook, adaptWordsToTranslation, generatePhraseByPhrase, detectVerseType, generatePlainEnglish, getEtymologyBreakdown } from '../lib/strongs'
 import { getCommentary } from '../lib/commentary'
 import { shareVerse } from '../lib/share'
 import { getBiblicalConnections } from '../lib/connections'
@@ -14,6 +14,7 @@ import BackButton from '../components/BackButton'
 import ErrorBanner from '../components/ErrorBanner'
 import { useToast } from '../components/Toast'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
+import useUserData from '../hooks/useUserData'
 
 function VerseContext() {
   const { bookId, chapter, verse } = useParams()
@@ -34,36 +35,30 @@ function VerseContext() {
   const [jfbNote, setJfbNote] = useState(null)
   const [expandedRefs, setExpandedRefs] = useState({})
   const [wordPopup, setWordPopup] = useState(null) // index of word to show popup for
+  const [wordExamples, setWordExamples] = useState(null) // { strongs, examples, total, loading } | null
+  const [wordEtymology, setWordEtymology] = useState(null) // { strongs, rawPhrase, components } | null
   const [refTexts, setRefTexts] = useState({})
   const [loading, setLoading] = useState(true)
   const [activeSection, setActiveSection] = useState('context')
   const [totalVerses, setTotalVerses] = useState(0)
 
-  // Highlight state
-  const [highlights, setHighlights] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('bic_highlights_local') || '[]')
-    } catch { return [] }
-  })
+  const { items: highlights, add: addHighlight, update: updateHighlight, remove: removeHighlight } = useUserData('highlights')
+  const { items: bookmarks, add: addBookmark, remove: removeBookmark } = useUserData('bookmarks')
+  const { items: notes, add: addNote, update: updateNote, remove: removeNote } = useUserData('notes')
+
   const currentHighlight = highlights.find(h => h.verse_ref === verseRef)
-
-  // Bookmark state
-  const [bookmarks, setBookmarks] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('bic_bookmarks_local') || '[]')
-    } catch { return [] }
-  })
   const isBookmarked = bookmarks.some(b => b.verse_ref === verseRef)
-
-  // Note state
-  const [notes, setNotes] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('bic_notes_local') || '[]')
-    } catch { return [] }
-  })
   const existingNote = notes.find(n => n.verse_ref === verseRef)
+
   const [noteText, setNoteText] = useState(existingNote?.content || '')
   const [showNoteEditor, setShowNoteEditor] = useState(false)
+
+  // Keep editor text in sync when navigating to a new verse or when notes load from cloud.
+  // Skip while the editor is open so we don't clobber user input.
+  useEffect(() => {
+    if (showNoteEditor) return
+    setNoteText(existingNote?.content || '')
+  }, [verseRef, existingNote?.content, showNoteEditor])
 
   useEffect(() => {
     async function loadData() {
@@ -102,6 +97,48 @@ function VerseContext() {
     }
     loadData()
   }, [bookId, chapterNum, verseNum, verseRef, translation])
+
+  // Load cross-verse examples whenever the word popup opens on a new word.
+  // Loading state is derived at render time, so no synchronous setState here.
+  useEffect(() => {
+    if (wordPopup === null) return
+    const w = strongsWords[wordPopup]
+    if (!w?.strongs) return
+    const targetStrongs = w.strongs
+
+    let cancelled = false
+    ;(async () => {
+      const allVerses = await getVersesForStrongs(targetStrongs)
+      if (cancelled) return
+      const others = allVerses.filter(r => r !== verseRef).slice(0, 3)
+      const loaded = await Promise.all(others.map(async (ref) => {
+        const [bId, ch, vs] = ref.split('.')
+        const v = await getVerse(bId, parseInt(ch), parseInt(vs), translation)
+        const book = getBookById(bId)
+        return { ref, bookId: bId, bookName: book?.name || bId, ch: parseInt(ch), vs: parseInt(vs), text: v?.text || '' }
+      }))
+      if (!cancelled) {
+        setWordExamples({ strongs: targetStrongs, examples: loaded, total: allVerses.length })
+      }
+    })()
+    return () => { cancelled = true }
+  }, [wordPopup, strongsWords, verseRef, translation])
+
+  // Load etymology (compound word breakdown) whenever the popup opens on a new word.
+  useEffect(() => {
+    if (wordPopup === null) return
+    const w = strongsWords[wordPopup]
+    if (!w?.strongs) return
+    const targetStrongs = w.strongs
+    let cancelled = false
+    ;(async () => {
+      const ety = await getEtymologyBreakdown(targetStrongs)
+      if (cancelled) return
+      if (ety) setWordEtymology({ strongs: targetStrongs, ...ety })
+      else setWordEtymology({ strongs: targetStrongs, rawPhrase: '', components: [] })
+    })()
+    return () => { cancelled = true }
+  }, [wordPopup, strongsWords])
 
   const hasPrevVerse = verseNum > 1
   const hasNextVerse = totalVerses > 0 && verseNum < totalVerses
@@ -167,13 +204,11 @@ function VerseContext() {
   const [bookmarkLabel, setBookmarkLabel] = useState('')
   const MAX_BOOKMARKS = 5
 
-  function openBookmarkModal() {
+  async function openBookmarkModal() {
     triggerHaptic(HapticStyle.LIGHT)
     if (isBookmarked) {
-      // Remove existing bookmark
-      const updated = bookmarks.filter(b => b.verse_ref !== verseRef)
-      setBookmarks(updated)
-      localStorage.setItem('bic_bookmarks_local', JSON.stringify(updated))
+      const existing = bookmarks.find(b => b.verse_ref === verseRef)
+      if (existing) await removeBookmark(existing.id)
       toast.info('Bookmark removed')
       return
     }
@@ -185,79 +220,58 @@ function VerseContext() {
     setShowBookmarkModal(true)
   }
 
-  function saveBookmark() {
+  async function saveBookmark() {
     if (!bookmarkLabel.trim()) {
       toast.error('Please enter a label for your bookmark')
       return
     }
     triggerHaptic(HapticStyle.SUCCESS)
-    const updated = [...bookmarks, {
-      id: crypto.randomUUID(),
+    await addBookmark({
       verse_ref: verseRef,
       verse_text: verseData?.text || '',
       label: bookmarkLabel.trim(),
       translation,
-      created_at: new Date().toISOString(),
-    }]
-    setBookmarks(updated)
-    localStorage.setItem('bic_bookmarks_local', JSON.stringify(updated))
+    })
     setShowBookmarkModal(false)
     toast.success('Bookmark saved')
   }
 
-  function handleHighlight(color) {
+  async function handleHighlight(color) {
     triggerHaptic(HapticStyle.LIGHT)
-    let updated
+    const existing = highlights.find(h => h.verse_ref === verseRef)
     if (color === null) {
-      updated = highlights.filter(h => h.verse_ref !== verseRef)
+      if (existing) await removeHighlight(existing.id)
+      return
+    }
+    if (existing) {
+      await updateHighlight(existing.id, { color })
     } else {
-      const existing = highlights.findIndex(h => h.verse_ref === verseRef)
-      const highlight = {
-        id: existing >= 0 ? highlights[existing].id : crypto.randomUUID(),
+      await addHighlight({
         verse_ref: verseRef,
         color,
         verse_text: verseData?.text || '',
         is_public: false,
         translation,
-        created_at: new Date().toISOString(),
-      }
-      if (existing >= 0) {
-        updated = [...highlights]
-        updated[existing] = highlight
-      } else {
-        updated = [...highlights, highlight]
-      }
+      })
     }
-    setHighlights(updated)
-    localStorage.setItem('bic_highlights_local', JSON.stringify(updated))
   }
 
-  function saveNote() {
+  async function saveNote() {
     triggerHaptic(HapticStyle.SUCCESS)
-    let updated
+    const existing = notes.find(n => n.verse_ref === verseRef)
     if (!noteText.trim()) {
-      updated = notes.filter(n => n.verse_ref !== verseRef)
+      if (existing) await removeNote(existing.id)
+    } else if (existing) {
+      await updateNote(existing.id, { content: noteText.trim() })
     } else {
-      const existing = notes.findIndex(n => n.verse_ref === verseRef)
-      const note = {
-        id: existing >= 0 ? notes[existing].id : crypto.randomUUID(),
+      await addNote({
         verse_ref: verseRef,
         content: noteText.trim(),
         verse_text: verseData?.text || '',
         is_public: false,
         translation,
-        created_at: existing >= 0 ? notes[existing].created_at : new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-      if (existing >= 0) {
-        updated = [...notes]
-        updated[existing] = note
-      } else {
-        updated = [...notes, note]
-      }
+      })
     }
-    setNotes(updated)
-    localStorage.setItem('bic_notes_local', JSON.stringify(updated))
     setShowNoteEditor(false)
   }
 
@@ -630,6 +644,52 @@ function VerseContext() {
                     </h3>
                     <p className="text-sm font-bold text-[var(--gold-accent)] mb-1">{vt.type}</p>
                     <p className="text-sm text-[var(--text-primary)] leading-relaxed">{vt.description}</p>
+                    {vt.analysis && (
+                      <div className="mt-3 pt-3 border-t border-[var(--border-subtle)]">
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">
+                          What the {language} actually says
+                        </p>
+                        <p className="text-sm text-[var(--text-primary)] leading-relaxed">{vt.analysis}</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* What This Verse Is Saying — plain-English, self-contained */}
+              {(() => {
+                const pe = generatePlainEnglish(verseData?.text, strongsWords, language)
+                if (!pe.simplified && pe.insights.length === 0) return null
+                return (
+                  <div className="bg-[var(--bg-card)] border border-[var(--gold-accent)] rounded-xl p-4">
+                    <h3 className="text-xs font-bold text-[var(--gold-accent)] mb-2 uppercase tracking-wide">
+                      💡 What This Verse Is Saying
+                    </h3>
+                    {pe.simplified && (
+                      <>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">
+                          In today's English
+                        </p>
+                        <p className="text-sm text-[var(--text-primary)] leading-relaxed italic">
+                          "{pe.simplified}"
+                        </p>
+                      </>
+                    )}
+                    {pe.insights.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-[var(--border-subtle)]">
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                          What the original language shows you
+                        </p>
+                        <ul className="space-y-2">
+                          {pe.insights.map((s, i) => (
+                            <li key={i} className="flex gap-2 text-sm text-[var(--text-primary)] leading-relaxed">
+                              <span className="text-[var(--gold-accent)] mt-1 flex-shrink-0">•</span>
+                              <span>{s}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )
               })()}
@@ -640,20 +700,29 @@ function VerseContext() {
                   Original {language} Text
                   <span className="font-normal text-[var(--text-muted)] ml-1">(tap any word)</span>
                 </h3>
-                <div className="flex flex-wrap gap-2" dir={language === 'Hebrew' ? 'rtl' : 'ltr'}>
-                  {strongsWords.map((w, i) => (
-                    <span
-                      key={i}
-                      onClick={() => { setWordPopup(wordPopup === i ? null : i); triggerHaptic(HapticStyle.LIGHT) }}
-                      className="text-xl font-bold text-[var(--text-primary)] cursor-pointer border-b-2 border-dotted border-[var(--accent-secondary)] pb-0.5"
-                    >
-                      {w.originalWord}
-                    </span>
-                  ))}
+                <div className="flex flex-wrap gap-x-3 gap-y-2" dir={language === 'Hebrew' ? 'rtl' : 'ltr'}>
+                  {strongsWords.map((w, i) => {
+                    const gloss = (w.englishWord || '').trim() || w.transliteration || ''
+                    const isActive = wordPopup === i
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => { setWordPopup(isActive ? null : i); triggerHaptic(HapticStyle.LIGHT) }}
+                        className={`inline-flex flex-col items-center text-center cursor-pointer border-b-2 border-dotted pb-0.5 min-h-[auto] min-w-[auto] p-0 bg-transparent ${isActive ? 'border-[var(--gold-accent)]' : 'border-[var(--accent-secondary)]'}`}
+                      >
+                        <span className="text-xl font-bold text-[var(--text-primary)] leading-tight">
+                          {w.originalWord}
+                        </span>
+                        {gloss && (
+                          <span className="text-[10px] text-[var(--text-muted)] leading-tight mt-0.5" style={{ direction: 'ltr' }}>
+                            {gloss}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
-                <p className="text-sm text-[var(--text-secondary)] mt-3 italic">
-                  {strongsWords.map(w => w.transliteration).filter(Boolean).join(' ')}
-                </p>
 
                 {/* Word popup — fixed position inside the card, not absolute on each word */}
                 {wordPopup !== null && strongsWords[wordPopup] && (() => {
@@ -688,6 +757,101 @@ function VerseContext() {
                           {w.simpleDefinition}
                         </p>
                       )}
+
+                      {/* Etymology / compound word breakdown — "built from G575 + G2644" */}
+                      {wordEtymology && wordEtymology.strongs === w.strongs && wordEtymology.components.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-[var(--border-subtle)]">
+                          <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">
+                            Built from {wordEtymology.components.length === 1 ? 'this root' : 'these roots'}
+                          </p>
+                          <div className="space-y-1">
+                            {wordEtymology.components.map((c) => (
+                              <button
+                                key={c.strongs}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  triggerHaptic(HapticStyle.LIGHT)
+                                  navigate(`/lexicon/${c.strongs}`)
+                                }}
+                                className="w-full text-left bg-[var(--bg-surface)] rounded-md px-2 py-1 min-h-[auto] active:scale-[0.98]"
+                              >
+                                <div className="flex items-baseline gap-1.5 flex-wrap">
+                                  {c.originalWord && (
+                                    <span className="text-sm font-bold text-[var(--text-primary)]">{c.originalWord}</span>
+                                  )}
+                                  {c.transliteration && (
+                                    <span className="text-[11px] italic text-[var(--text-secondary)]">{c.transliteration}</span>
+                                  )}
+                                  <span className="text-[10px] font-mono text-[var(--accent-secondary)]">{c.strongs}</span>
+                                </div>
+                                {c.gloss && (
+                                  <p className="text-[11px] text-[var(--text-primary)] leading-snug">— {c.gloss}</p>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Cross-verse examples — see how this Strong's is used elsewhere */}
+                      {w.strongs && (() => {
+                        const ready = wordExamples && wordExamples.strongs === w.strongs
+                        return (
+                          <div className="mt-2 pt-2 border-t border-[var(--border-subtle)]">
+                            {ready ? (
+                              <>
+                                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">
+                                  Used in {wordExamples.total} verse{wordExamples.total !== 1 ? 's' : ''}
+                                </p>
+                                {wordExamples.examples.length === 0 ? (
+                                  <p className="text-[10px] text-[var(--text-muted)] italic">No other verses use this word.</p>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {wordExamples.examples.map((ex) => (
+                                      <button
+                                        key={ex.ref}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          triggerHaptic(HapticStyle.LIGHT)
+                                          navigate(`/bible/${ex.bookId}/${ex.ch}/${ex.vs}`)
+                                        }}
+                                        className="w-full text-left bg-[var(--bg-surface)] rounded-md px-2 py-1 min-h-[auto] active:scale-[0.98]"
+                                      >
+                                        <p className="text-[10px] font-bold text-[var(--accent-secondary)]">
+                                          {ex.bookName} {ex.ch}:{ex.vs}
+                                        </p>
+                                        <p className="text-[11px] text-[var(--text-primary)] leading-snug line-clamp-2">
+                                          {ex.text}
+                                        </p>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                {wordExamples.total > wordExamples.examples.length && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      triggerHaptic(HapticStyle.LIGHT)
+                                      navigate(`/lexicon/${w.strongs}`)
+                                    }}
+                                    className="text-[10px] font-bold text-[var(--accent-secondary)] mt-1 min-h-[auto] p-0"
+                                  >
+                                    See all {wordExamples.total} uses →
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide mb-1">
+                                  Finding other uses…
+                                </p>
+                                <div className="h-6 shimmer rounded" />
+                              </>
+                            )}
+                          </div>
+                        )
+                      })()}
+
                       <p className="text-[10px] text-[var(--text-muted)] mt-1">{w.strongs} • {w.language}</p>
                     </div>
                   )

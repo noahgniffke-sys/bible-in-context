@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
-import useLocalStorage from '../hooks/useLocalStorage'
+import usePlanSync from '../hooks/usePlanSync'
 import TabBar from '../components/TabBar'
 import EmptyState from '../components/EmptyState'
 import ErrorBanner from '../components/ErrorBanner'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
+import { BUILT_IN_PLANS, getCompletedDays } from '../data/plans/builtin'
 
 const CATEGORY_TABS = [
   { key: 'all', label: 'All' },
@@ -22,7 +23,7 @@ function Plans() {
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [subscriptions] = useLocalStorage('bic_plan_subs_local', [])
+  const { subscriptions } = usePlanSync()
 
   useEffect(() => {
     loadPlans()
@@ -70,6 +71,68 @@ function Plans() {
         )}
       </div>
 
+      {/* Featured / built-in plans */}
+      <div className="mb-6">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-semibold mb-3 px-1">
+          Featured · Christ-Centered Studies
+        </p>
+        <div className="flex gap-3 overflow-x-auto -mx-4 px-4 pb-2 snap-x snap-mandatory scrollbar-none">
+          {BUILT_IN_PLANS.map(p => {
+            const done = getCompletedDays(p.slug).length
+            const total = p.days.length
+            const pct = total > 0 ? Math.round((done / total) * 100) : 0
+            return (
+              <button
+                key={p.slug}
+                onClick={() => { navigate(`/plans/built/${p.slug}`); triggerHaptic(HapticStyle.LIGHT) }}
+                className="snap-start shrink-0 w-64 text-left rounded-2xl p-4 active:scale-[0.98] transition-transform"
+                style={{
+                  background:
+                    'linear-gradient(135deg, color-mix(in oklab, var(--accent-primary) 18%, var(--bg-card)) 0%, var(--bg-card) 100%)',
+                  border: '1px solid var(--border-primary)',
+                  boxShadow: '0 4px 14px -8px var(--accent-glow)',
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-2xl">{p.emoji}</span>
+                  <span
+                    className="text-[10px] uppercase tracking-[0.2em] font-bold"
+                    style={{ color: 'var(--gold-accent)' }}
+                  >
+                    Featured
+                  </span>
+                </div>
+                <h3 className="font-bold text-[var(--text-primary)] text-sm leading-tight mb-1">
+                  {p.title}
+                </h3>
+                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-3 min-h-[2.4em]">
+                  {p.description}
+                </p>
+                <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+                  <span>{total} days</span>
+                  {done > 0 && (
+                    <span style={{ color: 'var(--accent-success)' }}>
+                      {pct}% complete
+                    </span>
+                  )}
+                </div>
+                {done > 0 && (
+                  <div className="h-1 mt-2 bg-[var(--bg-surface)] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${pct}%`, background: 'var(--accent-success)' }}
+                    />
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-semibold mb-2 px-1">
+        Community Plans
+      </p>
       <TabBar tabs={CATEGORY_TABS} activeTab={category} onChange={setCategory} variant="pill" />
 
       {error && <ErrorBanner message={error} className="my-4" />}

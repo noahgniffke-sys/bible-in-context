@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   bio TEXT,
   avatar_url TEXT,
   is_public BOOLEAN DEFAULT TRUE,
-  preferred_translation TEXT DEFAULT 'ESV',
+  preferred_translation TEXT DEFAULT 'WEB',
   followers_count INTEGER DEFAULT 0,
   following_count INTEGER DEFAULT 0,
   profile_setup_complete BOOLEAN DEFAULT FALSE,
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS highlights (
   verse_ref TEXT NOT NULL,
   color TEXT NOT NULL DEFAULT 'var(--highlight-yellow)',
   is_public BOOLEAN DEFAULT FALSE,
-  translation TEXT DEFAULT 'ESV',
+  translation TEXT DEFAULT 'WEB',
   verse_text TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, verse_ref, translation)
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS notes (
   verse_ref TEXT NOT NULL,
   content TEXT NOT NULL,
   is_public BOOLEAN DEFAULT FALSE,
-  translation TEXT DEFAULT 'ESV',
+  translation TEXT DEFAULT 'WEB',
   verse_text TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -83,7 +83,8 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   verse_ref TEXT NOT NULL,
-  translation TEXT DEFAULT 'ESV',
+  label TEXT,
+  translation TEXT DEFAULT 'WEB',
   verse_text TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, verse_ref, translation)

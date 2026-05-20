@@ -44,11 +44,29 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  // Live profile updates via Realtime — only attach if Realtime is enabled
+  // (otherwise the subscription connects but the channel just sits idle).
+  // Disabled until we confirm Realtime publication is active on the project.
+  // useEffect(() => {
+  //   if (!user?.id) return
+  //   const channel = supabase
+  //     .channel(`profile-self-${user.id}`)
+  //     .on('postgres_changes', {
+  //       event: 'UPDATE',
+  //       schema: 'public',
+  //       table: 'profiles',
+  //       filter: `id=eq.${user.id}`,
+  //     }, (payload) => {
+  //       if (payload.new) setProfile((prev) => ({ ...(prev || {}), ...payload.new }))
+  //     })
+  //     .subscribe()
+  //   return () => { supabase.removeChannel(channel) }
+  // }, [user?.id])
+
   async function loadProfile(userId) {
     try {
       const { data, error } = await getProfile(userId)
-
-      if (error && error.code !== 'PGRST116') throw error
+      if (error) console.warn('[auth] getProfile error:', error)
 
       if (data) {
         setProfile(data)
@@ -57,15 +75,16 @@ export function AuthProvider({ children }) {
         if (authUser) {
           const meta = authUser.user_metadata || {}
           const email = authUser.email || ''
-          const username = (meta.preferred_username || meta.name || email.split('@')[0] || 'user')
-            .toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 30)
+          const base = (meta.preferred_username || meta.name || email.split('@')[0] || 'user')
+            .toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 14) || 'user'
 
-          const { data: newProfile } = await createProfile(userId, {
-            username: `${username}_${Date.now().toString(36)}`,
-            display_name: meta.full_name || meta.name || username,
+          const { data: newProfile, error: createErr } = await createProfile(userId, {
+            username: `${base}_${Date.now().toString(36).slice(-5)}`,
+            display_name: meta.full_name || meta.name || base,
             avatar_url: meta.avatar_url || meta.picture || null,
             profile_setup_complete: false
           })
+          if (createErr) console.warn('[auth] createProfile error:', createErr)
           setProfile(newProfile)
         }
       }

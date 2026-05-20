@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import useLocalStorage from '../hooks/useLocalStorage'
-import { formatTimeAgo } from '../lib/utils'
+import useUserData from '../hooks/useUserData'
 import { parseVerseRef, formatVerseRef } from '../lib/bible-books'
 import EmptyState from '../components/EmptyState'
 import TabBar from '../components/TabBar'
@@ -14,7 +13,7 @@ const PRAYER_TABS = [
 ]
 
 function PrayerJournal() {
-  const [prayers, setPrayers] = useLocalStorage('bic_prayers_local', [])
+  const { items: prayers, add: addPrayer, update: updatePrayer, remove: removePrayer } = useUserData('prayers')
   const [tab, setTab] = useState('active')
   const [showEditor, setShowEditor] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -44,31 +43,25 @@ function PrayerJournal() {
     triggerHaptic(HapticStyle.LIGHT)
   }
 
-  function savePrayer() {
+  async function savePrayer() {
     if (!content.trim()) return
 
     triggerHaptic(HapticStyle.SUCCESS)
-    const now = new Date().toISOString()
 
     if (editingId) {
-      setPrayers(prayers.map(p => p.id === editingId ? {
-        ...p,
+      await updatePrayer(editingId, {
         title: title.trim() || null,
         content: content.trim(),
         verse_ref: verseRef.trim() || null,
-        updated_at: now,
-      } : p))
+      })
     } else {
-      setPrayers([...prayers, {
-        id: crypto.randomUUID(),
+      await addPrayer({
         title: title.trim() || null,
         content: content.trim(),
         verse_ref: verseRef.trim() || null,
         is_answered: false,
         answered_at: null,
-        created_at: now,
-        updated_at: now,
-      }])
+      })
     }
 
     setShowEditor(false)
@@ -83,11 +76,10 @@ function PrayerJournal() {
     })
     if (yes) {
       triggerHaptic(HapticStyle.SUCCESS)
-      setPrayers(prayers.map(p => p.id === id ? {
-        ...p,
+      await updatePrayer(id, {
         is_answered: true,
         answered_at: new Date().toISOString(),
-      } : p))
+      })
       toast.success('Prayer marked as answered')
     }
   }
@@ -101,7 +93,7 @@ function PrayerJournal() {
     })
     if (yes) {
       triggerHaptic(HapticStyle.ERROR)
-      setPrayers(prayers.filter(p => p.id !== id))
+      await removePrayer(id)
     }
   }
 

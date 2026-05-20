@@ -1,11 +1,23 @@
 import { useNavigate } from 'react-router-dom'
 
-function BackButton({ label, to }) {
+// Smart back button: prefer browser history (the page the user just came from)
+// over an explicit `to` target. `to` is now a deep-link fallback used only when
+// there's no history within the current React Router session (e.g., user
+// loaded the page directly from a URL or share link).
+function BackButton({ label, to, fallback = '/' }) {
   const navigate = useNavigate()
 
   function handleClick() {
-    if (to) navigate(to)
-    else navigate(-1)
+    // React Router stores its own idx on history.state. idx > 0 means we have
+    // app-internal history we can pop. Otherwise we're at the entry point.
+    const idx = window.history.state?.idx ?? 0
+    if (idx > 0) {
+      navigate(-1)
+    } else if (to) {
+      navigate(to)
+    } else {
+      navigate(fallback)
+    }
   }
 
   return (

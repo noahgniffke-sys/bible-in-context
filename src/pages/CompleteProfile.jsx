@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { updateProfile } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { validateUsername, validateDisplayName } from '../lib/moderation'
 import ErrorBanner from '../components/ErrorBanner'
 import { useToast } from '../components/Toast'
@@ -37,17 +37,20 @@ function CompleteProfile() {
     triggerHaptic(HapticStyle.MEDIUM)
 
     try {
-      const { error: updateError } = await updateProfile(user.id, {
-        username: username.toLowerCase(),
-        display_name: displayName,
-        profile_setup_complete: true,
+      const { error: rpcError } = await supabase.rpc('update_my_profile', {
+        p_username: username.toLowerCase(),
+        p_display_name: displayName,
+        p_setup_complete: true,
       })
-      if (updateError) throw updateError
+      if (rpcError) {
+        if (rpcError.code === '23505') throw new Error('That username is already taken')
+        throw rpcError
+      }
 
-      await refreshProfile()
+      refreshProfile().catch(() => {})
       triggerHaptic(HapticStyle.SUCCESS)
       toast.success('Profile set up!')
-      navigate('/', { replace: true })
+      window.location.replace('/')
     } catch (err) {
       setError(err.message)
       triggerHaptic(HapticStyle.ERROR)

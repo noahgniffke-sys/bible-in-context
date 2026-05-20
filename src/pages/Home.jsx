@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { getTranslation, setTranslation, getTranslationName, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
 import { useToast } from '../components/Toast'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
+import VerseOfTheDay from '../components/VerseOfTheDay'
 
 function Home() {
   const { theme, toggleTheme } = useTheme()
@@ -32,6 +33,8 @@ function Home() {
           {user ? 'Welcome back' : 'Explore Scripture with depth and clarity'}
         </p>
       </div>
+
+      <VerseOfTheDay />
 
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3 mb-4">

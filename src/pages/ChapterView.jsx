@@ -10,6 +10,7 @@ import BackButton from '../components/BackButton'
 import ErrorBanner from '../components/ErrorBanner'
 import { useToast } from '../components/Toast'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
+import useUserData from '../hooks/useUserData'
 
 function ChapterView() {
   const { bookId, chapter } = useParams()
@@ -33,19 +34,8 @@ function ChapterView() {
   const [selectedVerses, setSelectedVerses] = useState(new Set())
   const [selectionMode, setSelectionMode] = useState(false)
 
-  // Load highlights from localStorage
-  const [highlights, setHighlights] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('bic_highlights_local') || '[]')
-    } catch { return [] }
-  })
-
-  // Load notes from localStorage
-  const [notes] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('bic_notes_local') || '[]')
-    } catch { return [] }
-  })
+  const { items: highlights, add: addHighlight, update: updateHighlight } = useUserData('highlights')
+  const { items: notes } = useUserData('notes')
 
   const fetchChapter = useCallback(async () => {
     setLoading(true)
@@ -155,32 +145,29 @@ function ChapterView() {
     setSelectedVerses(new Set([verseRef]))
   }
 
-  // Apply highlight to all selected verses
-  function applyHighlightToSelected(color) {
+  async function applyHighlightToSelected(color) {
     triggerHaptic(HapticStyle.SUCCESS)
-    let updated = [...highlights]
+    const count = selectedVerses.size
 
-    for (const ref of selectedVerses) {
-      const existingIdx = updated.findIndex(h => h.verse_ref === ref)
+    await Promise.all([...selectedVerses].map(async (ref) => {
+      const existing = highlights.find(h => h.verse_ref === ref)
       const verse = verses.find(v => v.ref === ref)
-      const highlight = {
-        id: existingIdx >= 0 ? updated[existingIdx].id : crypto.randomUUID(),
-        verse_ref: ref,
-        color,
-        verse_text: verse?.text || '',
-        is_public: false,
-        translation: currentTranslation,
-        created_at: new Date().toISOString(),
+      if (existing) {
+        await updateHighlight(existing.id, { color, verse_text: verse?.text || '' })
+      } else {
+        await addHighlight({
+          verse_ref: ref,
+          color,
+          verse_text: verse?.text || '',
+          is_public: false,
+          translation: currentTranslation,
+        })
       }
-      if (existingIdx >= 0) updated[existingIdx] = highlight
-      else updated.push(highlight)
-    }
+    }))
 
-    setHighlights(updated)
-    localStorage.setItem('bic_highlights_local', JSON.stringify(updated))
     setSelectionMode(false)
     setSelectedVerses(new Set())
-    toast.success(`${selectedVerses.size} verse${selectedVerses.size > 1 ? 's' : ''} highlighted`)
+    toast.success(`${count} verse${count > 1 ? 's' : ''} highlighted`)
   }
 
   function clearSelection() {

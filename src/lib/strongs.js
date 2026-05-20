@@ -488,7 +488,167 @@ function isImperativeMorph(morph) {
   return tvm.length >= 3 && tvm[tvm.length - 1] === 'M'    // last char of TVM = mood
 }
 
-export function detectVerseType({ words, text, bookId }) {
+// Plain-English sense of the grammatical features so readers see WHY the form matters
+const GREEK_TENSE_SENSE = {
+  present: 'continuous, ongoing action',
+  imperfect: 'continuous action in the past',
+  future: 'action yet to happen',
+  aorist: 'a single, completed event viewed as a whole',
+  perfect: 'a completed action whose results continue into the present',
+  pluperfect: 'a past completed action whose results were still in effect at a past point',
+}
+
+const HEBREW_ASPECT_SENSE = {
+  perfect: 'completed or certain action',
+  imperfect: 'ongoing, habitual, or future action',
+  imperative: 'a direct command',
+  participle: 'ongoing or characteristic action',
+  infinitive: 'the verbal idea expressed abstractly',
+}
+
+const HEBREW_STEM_SENSE = {
+  qal: 'simple active ("he did")',
+  niphal: 'simple passive or reflexive ("he was done" / "he did to himself")',
+  piel: 'intensive active ("he thoroughly did")',
+  pual: 'intensive passive ("he was thoroughly done")',
+  hiphil: 'causative active ("he caused someone to do")',
+  hophal: 'causative passive ("he was caused to do")',
+  hithpael: 'reflexive or reciprocal ("he did to himself")',
+}
+
+const VOICE_SENSE = {
+  active: 'the subject performs the action',
+  passive: 'the subject receives the action',
+  middle: 'the subject acts on or for itself',
+}
+
+const MOOD_SENSE = {
+  indicative: 'presenting it as a fact',
+  subjunctive: 'expressing possibility, purpose, or a conditional idea',
+  optative: 'expressing a wish or remote possibility',
+  imperative: 'issuing a command',
+}
+
+function isVerbWord(w) {
+  const morph = (w.morph || '').toLowerCase()
+  const pos = (w.partOfSpeech || '').toLowerCase()
+  return /^v-/i.test(morph) ||
+    /(qal|niphal|piel|pual|hiphil|hophal|hithpael|perfect|imperfect|imperative|participle|infinitive|aorist)/.test(morph) ||
+    /verb/.test(pos)
+}
+
+const COMMON_SKIP = new Set([
+  'the','a','and','of','in','to','for','from','with','by','this','that','these','those',
+  'he','she','it','they','we','you','i','but','not','was','is','are','were','be','been','being',
+  'shall','will','may','might','have','has','had','do','did','done','there','here','then','now','so','as',
+])
+
+function isContentNoun(w) {
+  const morph = (w.morph || '').toLowerCase()
+  const pos = (w.partOfSpeech || '').toLowerCase()
+  const isNoun = /^n-/i.test(morph) || /noun/.test(morph) || /noun/.test(pos)
+  if (!isNoun) return false
+  const eng = (w.englishWord || '').toLowerCase().trim()
+  if (!eng || COMMON_SKIP.has(eng)) return false
+  return true
+}
+
+function findInDesc(desc, keys) {
+  const lower = (desc || '').toLowerCase()
+  for (const k of keys) {
+    if (new RegExp(`\\b${k}\\b`, 'i').test(lower)) return k
+  }
+  return null
+}
+
+function pickMainVerb(words) {
+  const verbs = (words || []).filter(isVerbWord)
+  if (verbs.length === 0) return null
+  const scored = verbs.map(v => ({
+    v,
+    score: (v.englishWord ? 3 : 0) +
+           (v.morphDescription ? 2 : 0) +
+           (v.simpleDefinition ? 1 : 0) +
+           ((v.englishWord || '').length > 3 ? 1 : 0),
+  }))
+  scored.sort((a, b) => b.score - a.score)
+  return scored[0].v
+}
+
+function pickKeyTerms(words, limit = 2) {
+  const nouns = (words || []).filter(isContentNoun)
+  if (nouns.length === 0) return []
+  // Deduplicate by Strong's number, prefer richer definitions
+  const seen = new Map()
+  for (const n of nouns) {
+    const key = n.strongs || n.transliteration || n.originalWord
+    if (!seen.has(key) || (n.simpleDefinition?.length || 0) > (seen.get(key).simpleDefinition?.length || 0)) {
+      seen.set(key, n)
+    }
+  }
+  const unique = [...seen.values()]
+  unique.sort((a, b) => (b.simpleDefinition?.length || 0) - (a.simpleDefinition?.length || 0))
+  return unique.slice(0, limit)
+}
+
+function buildVerbAnalysis(verb, isGreek) {
+  if (!verb) return ''
+  const desc = (verb.morphDescription || '').toLowerCase()
+  const translit = verb.transliteration || verb.originalWord
+  if (!translit) return ''
+  const english = verb.englishWord ? ` ("${verb.englishWord}")` : ''
+  const lang = isGreek ? 'Greek' : 'Hebrew'
+
+  const tenseMap = isGreek ? GREEK_TENSE_SENSE : HEBREW_ASPECT_SENSE
+  const tense = findInDesc(desc, Object.keys(tenseMap))
+  const voice = findInDesc(desc, Object.keys(VOICE_SENSE))
+  const mood = findInDesc(desc, Object.keys(MOOD_SENSE))
+  const stem = isGreek ? null : findInDesc(desc, Object.keys(HEBREW_STEM_SENSE))
+
+  const notes = []
+  if (stem) notes.push(`${stem} stem (${HEBREW_STEM_SENSE[stem]})`)
+  if (tense) notes.push(`${tense}${isGreek ? ' tense' : ''} — ${tenseMap[tense]}`)
+  if (voice) notes.push(`${voice} voice (${VOICE_SENSE[voice]})`)
+  if (mood && mood !== tense) notes.push(`${mood} mood (${MOOD_SENSE[mood]})`)
+
+  if (notes.length === 0) {
+    const gloss = verb.simpleDefinition || verb.englishWord
+    if (!gloss) return ''
+    return `The main ${lang} verb here is ${translit}${english} — ${gloss}.`
+  }
+  return `The main ${lang} verb ${translit}${english} is ${notes.join('; ')}.`
+}
+
+function buildTermsAnalysis(terms, isGreek) {
+  if (!terms || terms.length === 0) return ''
+  const lang = isGreek ? 'Greek' : 'Hebrew'
+  const pieces = terms.map(t => {
+    const translit = t.transliteration || t.originalWord
+    const english = t.englishWord ? ` ("${t.englishWord}")` : ''
+    const def = t.simpleDefinition || ''
+    return def ? `${translit}${english} — ${def}` : `${translit}${english}`
+  })
+  const joiner = pieces.length > 1 ? '; ' : ''
+  if (pieces.length === 1) {
+    return `The weight-bearing ${lang} noun in this verse is ${pieces[0]}.`
+  }
+  return `Key ${lang} nouns here: ${pieces.join(joiner)}.`
+}
+
+function generateVerseAnalysis(words, language) {
+  if (!words || words.length === 0) return ''
+  const isGreek = language === 'Greek'
+  const mainVerb = pickMainVerb(words)
+  const keyTerms = pickKeyTerms(words, 2)
+  const parts = []
+  const v = buildVerbAnalysis(mainVerb, isGreek)
+  if (v) parts.push(v)
+  const t = buildTermsAnalysis(keyTerms, isGreek)
+  if (t) parts.push(t)
+  return parts.join(' ')
+}
+
+function computeVerseType({ words, text, bookId }) {
   const t = (text || '').toString()
   const lower = t.toLowerCase()
   const book = (bookId || '').toUpperCase()
@@ -622,6 +782,155 @@ export function detectVerseType({ words, text, bookId }) {
     type: 'Scripture',
     description: 'A passage of Scripture. Read it carefully in context — what comes before and after, who is speaking, and to whom.',
   }
+}
+
+// Public entry: genre classification + verse-specific original-language analysis
+export function detectVerseType({ words, text, bookId }) {
+  const base = computeVerseType({ words, text, bookId })
+  const language = getLanguageForBook(bookId)
+  const analysis = generateVerseAnalysis(words, language)
+  return { ...base, analysis }
+}
+
+// Rewrite a grammatical form into plain-English meaning for someone with no
+// Greek/Hebrew background. Returns a single self-contained sentence.
+function explainFormInPlainEnglish(word, isGreek) {
+  if (!word) return ''
+  const desc = (word.morphDescription || '').toLowerCase()
+  const english = word.englishWord || word.simpleDefinition || ''
+  const label = english ? `"${english}"` : 'this word'
+
+  if (isGreek) {
+    if (/aorist/.test(desc)) {
+      return `${label} is in the aorist form — meaning it points to a single, completed event viewed as a whole. The writer is saying this happened once and decisively, not something that keeps repeating.`
+    }
+    if (/pluperfect/.test(desc)) {
+      return `${label} is in the pluperfect form — an action that was already completed at some point in the past, with its results reaching forward from there.`
+    }
+    if (/\bperfect\b/.test(desc)) {
+      return `${label} is in the perfect form — the action was finished in the past, but the effect of it is still true right now. What was done then is still in force today.`
+    }
+    if (/\bpresent\b/.test(desc)) {
+      return `${label} is in the present form — ongoing, continuous action. Not a one-time event but something that keeps happening.`
+    }
+    if (/imperfect/.test(desc)) {
+      return `${label} is in the imperfect form — continuous action in the past that kept going over time, not a finished event.`
+    }
+    if (/\bfuture\b/.test(desc)) {
+      return `${label} is in the future form — pointing to what will happen, not what has happened yet.`
+    }
+  } else {
+    if (/perfect/.test(desc)) {
+      return `${label} is in the perfect aspect — Hebrew uses this form to present an action as complete or certain, already settled in view.`
+    }
+    if (/imperfect/.test(desc)) {
+      return `${label} is in the imperfect aspect — Hebrew uses this form for ongoing, habitual, or yet-to-happen action, not something already finished.`
+    }
+    if (/hiphil/.test(desc)) {
+      return `${label} is a Hiphil (causative) form — the subject is causing someone or something else to do the action, not doing it themselves.`
+    }
+    if (/piel/.test(desc)) {
+      return `${label} is a Piel (intensive) form — the action is emphatic, thorough, or repeated, not just a plain "he did it."`
+    }
+    if (/niphal/.test(desc)) {
+      return `${label} is a Niphal (simple passive/reflexive) form — the subject is receiving the action, or doing it to themselves.`
+    }
+    if (/hithpael/.test(desc)) {
+      return `${label} is a Hithpael (reflexive) form — the subject is doing something to themselves, or doing it back and forth.`
+    }
+  }
+  if (/imperative/.test(desc)) {
+    return `${label} is an imperative — a direct command to act. It is not describing something, it is telling the reader to do it.`
+  }
+  if (/subjunctive/.test(desc)) {
+    return `${label} is in the subjunctive — expressing possibility, purpose, or a "so that this happens" kind of idea rather than a plain fact.`
+  }
+  if (/participle/.test(desc)) {
+    return `${label} is a participle — describing someone as continually or characteristically doing this action (the "-ing" idea).`
+  }
+  return ''
+}
+
+// Build a plain-English summary of the verse that a first-time reader
+// could read on its own and actually understand.
+export function generatePlainEnglish(verseText, words, language) {
+  if (!verseText) return { simplified: '', insights: [] }
+
+  // Step 1 — modernize KJV wording so the verse reads in today's English
+  let simplified = verseText
+  for (const [archaic, modern] of Object.entries(KJV_TO_MODERN)) {
+    const reLower = new RegExp(`\\b${archaic}\\b`, 'g')
+    simplified = simplified.replace(reLower, modern)
+    const cap = archaic[0].toUpperCase() + archaic.slice(1)
+    const modernCap = modern[0].toUpperCase() + modern.slice(1)
+    simplified = simplified.replace(new RegExp(`\\b${cap}\\b`, 'g'), modernCap)
+  }
+
+  // Step 2 — extract practical, reader-level insights from the original language
+  const isGreek = language === 'Greek'
+  const mainVerb = pickMainVerb(words)
+  const keyTerms = pickKeyTerms(words, 2)
+
+  const insights = []
+
+  const verbInsight = explainFormInPlainEnglish(mainVerb, isGreek)
+  if (verbInsight) insights.push(verbInsight)
+
+  for (const term of keyTerms) {
+    const eng = term.englishWord
+    const translit = term.transliteration || term.originalWord
+    const def = term.simpleDefinition
+    if (eng && def && translit) {
+      insights.push(`"${eng}" in this verse is the ${isGreek ? 'Greek' : 'Hebrew'} word ${translit}, which carries the sense of ${def}.`)
+    }
+  }
+
+  return { simplified, insights }
+}
+
+// Pull etymology references (e.g. "from G575 and G2644") from a Strong's
+// definition string and resolve each one to its own word + meaning so
+// compound words show their building blocks.
+export async function getEtymologyBreakdown(strongsNumber) {
+  if (!strongsNumber) return null
+  const entry = await lookupStrongs(strongsNumber)
+  if (!entry?.definition) return null
+
+  const match = entry.definition.match(/from\s+([^;:]+?)(?:;|:—|$)/i)
+  if (!match) return null
+  const chunk = match[1]
+  const refs = [...chunk.matchAll(/\b[GH]\d+\b/g)].map(m => m[0])
+  if (refs.length === 0) return null
+
+  const components = await Promise.all(refs.map(async (ref) => {
+    const r = await lookupStrongs(ref)
+    if (!r) return { strongs: ref, gloss: '' }
+    // Parse out the original word + a short gloss from the definition
+    const defStr = r.definition || ''
+    // Original word is often the first non-ASCII token
+    const wordMatch = defStr.match(/^([^\s]+)/)
+    const original = r.word || (wordMatch ? wordMatch[1] : '')
+    // Prefer the KJV usage list for a short, reader-friendly gloss
+    const kjvMatch = defStr.match(/:—([^.]+)/)
+    let gloss = ''
+    if (kjvMatch) {
+      gloss = kjvMatch[1].trim().split(',').slice(0, 3).map(s => s.trim()).filter(Boolean).join(', ')
+    } else {
+      // Fall back to the literal sense between semicolons
+      const parts = defStr.split(';')
+      if (parts.length > 1) gloss = parts[parts.length - 1].trim().split(/[,.]/)[0].trim()
+    }
+    return {
+      strongs: ref,
+      originalWord: original,
+      transliteration: r.transliteration || '',
+      pronunciation: r.pronunciation || '',
+      partOfSpeech: r.partOfSpeech || '',
+      gloss: gloss.slice(0, 80),
+    }
+  }))
+
+  return { rawPhrase: chunk.trim(), components }
 }
 
 // KJV archaic → modern English mappings for matching across translations

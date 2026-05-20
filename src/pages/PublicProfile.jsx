@@ -9,6 +9,7 @@ import BackButton from '../components/BackButton'
 import ErrorBanner from '../components/ErrorBanner'
 import EmptyState from '../components/EmptyState'
 import TabBar from '../components/TabBar'
+import VerifiedBadge from '../components/VerifiedBadge'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 const PROFILE_TABS = [
@@ -37,6 +38,24 @@ function PublicProfile() {
   useEffect(() => {
     loadProfile()
   }, [username])
+
+  // Live follower count subscription — disabled until Realtime is enabled
+  // on the profiles table in Supabase. Re-enable after running the SQL.
+  // useEffect(() => {
+  //   if (!profile?.id) return
+  //   const channel = supabase
+  //     .channel(`profile-${profile.id}`)
+  //     .on('postgres_changes', {
+  //       event: 'UPDATE',
+  //       schema: 'public',
+  //       table: 'profiles',
+  //       filter: `id=eq.${profile.id}`,
+  //     }, (payload) => {
+  //       if (payload.new) setProfile((prev) => ({ ...(prev || {}), ...payload.new }))
+  //     })
+  //     .subscribe()
+  //   return () => { supabase.removeChannel(channel) }
+  // }, [profile?.id])
 
   async function loadProfile() {
     setLoading(true)
@@ -118,7 +137,10 @@ function PublicProfile() {
         <div className="w-16 h-16 rounded-full bg-[var(--accent-secondary)] flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
           {(profile.display_name || '?')[0].toUpperCase()}
         </div>
-        <h2 className="text-lg font-bold text-[var(--text-primary)]">{profile.display_name}</h2>
+        <h2 className="text-lg font-bold text-[var(--text-primary)] inline-flex items-center justify-center gap-1.5">
+          {profile.display_name}
+          <VerifiedBadge username={profile.username} size={14} />
+        </h2>
         <p className="text-sm text-[var(--text-muted)]">@{profile.username}</p>
         {profile.bio && (
           <p className="text-sm text-[var(--text-secondary)] mt-2">{profile.bio}</p>
