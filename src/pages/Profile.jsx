@@ -155,7 +155,7 @@ function Profile() {
               )}
             </div>
 
-            <h1 className="mt-4 text-2xl font-bold text-[var(--text-primary)] inline-flex items-center justify-center gap-2">
+            <h1 className="display mt-4 text-3xl text-[var(--text-primary)] inline-flex items-center justify-center gap-2">
               {profile?.display_name || 'User'}
               <VerifiedBadge username={profile?.username} size={16} />
             </h1>
@@ -224,7 +224,7 @@ function Profile() {
             >
               ✞
             </div>
-            <h1 className="mt-4 text-2xl font-bold text-[var(--text-primary)]">
+            <h1 className="display mt-4 text-3xl text-[var(--text-primary)]">
               Your Profile
             </h1>
             <p className="text-sm text-[var(--text-muted)] mt-1 max-w-xs">
