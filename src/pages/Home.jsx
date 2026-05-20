@@ -25,13 +25,14 @@ function Home() {
   return (
     <div className="p-4">
       {/* Welcome section */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-1">
+      <div className="mb-6 text-center pt-2">
+        <h2 className="display text-3xl text-[var(--text-primary)] mb-1">
           Bible in Context
         </h2>
-        <p className="text-[var(--text-secondary)]">
-          {user ? 'Welcome back' : 'Explore Scripture with depth and clarity'}
+        <p className="text-[var(--text-secondary)] font-serif text-base italic" style={{ fontFamily: 'var(--font-body)' }}>
+          {user ? 'Welcome back' : 'Scripture with depth and clarity'}
         </p>
+        <div className="themed-divider mt-4" />
       </div>
 
       <VerseOfTheDay />

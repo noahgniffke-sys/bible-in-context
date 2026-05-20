@@ -116,7 +116,7 @@ function Search() {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Search</h2>
+      <h2 className="display text-2xl text-[var(--text-primary)] mb-4">Search</h2>
 
       <TabBar tabs={SEARCH_TABS} activeTab={tab} onChange={(k) => { setTab(k); setHasSearched(false); setError(null); setResults([]); setUserResults([]) }} />
 

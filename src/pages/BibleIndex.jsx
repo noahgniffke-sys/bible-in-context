@@ -34,7 +34,7 @@ function BibleIndex() {
 
   return (
     <div className="p-4">
-      <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Bible</h2>
+      <h2 className="display text-2xl text-[var(--text-primary)] mb-4">Bible</h2>
 
       {/* Resume reading banner */}
       {lastBookInfo && lastChapter && (
@@ -44,10 +44,10 @@ function BibleIndex() {
             if (lastVerse) navigate(`/bible/${lastBook}/${lastChapter}/${lastVerse}`)
             else navigate(`/bible/${lastBook}/${lastChapter}`)
           }}
-          className="w-full bg-[var(--accent-secondary)] text-white rounded-xl px-4 py-3 mb-4 text-left active:scale-[0.98]"
+          className="themed-btn-primary w-full px-4 py-3 mb-4 text-left active:scale-[0.98]"
         >
-          <p className="text-sm font-bold">Continue Reading</p>
-          <p className="text-xs opacity-80">
+          <p className="text-sm font-bold tracking-wide">Continue Reading</p>
+          <p className="text-xs opacity-90 mt-0.5" style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic' }}>
             {lastBookInfo.name} {lastChapter}{lastVerse ? `:${lastVerse}` : ''}
           </p>
         </button>
@@ -55,19 +55,19 @@ function BibleIndex() {
 
       <TabBar tabs={TABS} activeTab={tab} onChange={setTab} />
 
-      <div className="space-y-1">
+      <div className="space-y-1 mt-3">
         {books.map((book) => (
           <div key={book.id}>
             {/* Book row */}
             <button
               onClick={() => handleBookTap(book.id)}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-subtle)] active:scale-[0.98] transition-transform"
+              className="themed-card w-full flex items-center justify-between px-4 py-3 active:scale-[0.98] transition-transform"
             >
               <div className="flex items-center gap-3">
-                <span className="text-sm text-[var(--text-muted)] w-8 text-right font-mono">
+                <span className="text-sm text-[var(--gold-accent)] w-8 text-right font-mono opacity-70">
                   {book.chapters}
                 </span>
-                <span className="font-medium text-[var(--text-primary)]">
+                <span className="font-medium text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-body)', fontSize: '1.05em' }}>
                   {book.name}
                 </span>
               </div>

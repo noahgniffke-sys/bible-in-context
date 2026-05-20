@@ -72,7 +72,7 @@ function Feed() {
   if (!user) {
     return (
       <div className="p-4">
-        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-4">Feed</h2>
+        <h2 className="display text-2xl text-[var(--text-primary)] mb-4">Feed</h2>
         <EmptyState
           emoji="👥"
           title="Sign In to See Your Feed"

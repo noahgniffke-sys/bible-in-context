@@ -137,7 +137,7 @@ function PublicProfile() {
         <div className="w-16 h-16 rounded-full bg-[var(--accent-secondary)] flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3">
           {(profile.display_name || '?')[0].toUpperCase()}
         </div>
-        <h2 className="text-lg font-bold text-[var(--text-primary)] inline-flex items-center justify-center gap-1.5">
+        <h2 className="display text-2xl text-[var(--text-primary)] inline-flex items-center justify-center gap-1.5">
           {profile.display_name}
           <VerifiedBadge username={profile.username} size={14} />
         </h2>
@@ -161,11 +161,7 @@ function PublicProfile() {
           <button
             onClick={toggleFollow}
             disabled={followLoading}
-            className={`mt-4 px-6 py-2 rounded-lg font-medium text-sm active:scale-95 ${
-              isFollowing
-                ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-primary)]'
-                : 'bg-[var(--accent-secondary)] text-white'
-            }`}
+            className={isFollowing ? 'themed-btn mt-4 px-6 py-2 text-sm' : 'themed-btn-primary mt-4 px-6 py-2 text-sm'}
           >
             {isFollowing ? 'Following' : 'Follow'}
           </button>

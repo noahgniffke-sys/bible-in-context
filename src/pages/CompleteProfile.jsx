@@ -63,11 +63,14 @@ function CompleteProfile() {
     <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-4">{'✞'}</div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+          <div className="text-5xl mb-4" style={{ color: 'var(--gold-accent)', textShadow: '0 0 22px var(--gold-glow)' }}>
+            {'✞'}
+          </div>
+          <h1 className="brand-wordmark text-2xl mb-2">
             Complete Your Profile
           </h1>
-          <p className="text-[var(--text-secondary)] text-sm">
+          <div className="themed-divider my-3" style={{ width: '40%' }} />
+          <p className="text-[var(--text-secondary)] text-sm italic" style={{ fontFamily: 'var(--font-body)' }}>
             Choose a username to share your studies with others.
           </p>
         </div>
@@ -102,7 +105,7 @@ function CompleteProfile() {
           <button
             type="submit"
             disabled={loading || !username || !displayName}
-            className="w-full py-3 bg-[var(--accent-secondary)] text-white rounded-xl font-bold disabled:opacity-50 active:scale-95"
+            className="themed-btn-primary w-full py-3 disabled:opacity-50"
           >
             {loading ? 'Saving...' : 'Continue'}
           </button>

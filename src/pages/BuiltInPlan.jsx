@@ -68,7 +68,7 @@ function BuiltInPlan() {
             >
               Featured Plan
             </p>
-            <h2 className="text-xl font-bold text-[var(--text-primary)] leading-tight">
+            <h2 className="display text-2xl text-[var(--text-primary)] leading-tight">
               {plan.title}
             </h2>
           </div>

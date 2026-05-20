@@ -370,12 +370,23 @@ function VerseContext() {
 
       {/* Verse text */}
       <div
-        className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-4"
+        className="themed-card p-4 mb-4 relative"
         style={currentHighlight ? { backgroundColor: currentHighlight.color } : undefined}
       >
-        <p className="text-xs text-[var(--accent-secondary)] font-bold mb-2">
+        {/* Decorative gold rule across the top */}
+        <div
+          aria-hidden="true"
+          className="absolute top-0 left-4 right-4 h-px"
+          style={{
+            background: 'linear-gradient(90deg, transparent, var(--gold-accent), transparent)',
+            opacity: 0.45,
+          }}
+        />
+        <p className="verse-ref text-sm mb-3">
           {formatVerseRef(bookId, chapterNum, verseNum)}
-          <span className="text-[var(--text-muted)] font-normal ml-2">{translation}</span>
+          <span className="text-[var(--text-muted)] font-normal ml-2 text-xs" style={{ fontFamily: 'var(--font-ui)', letterSpacing: 0 }}>
+            {translation}
+          </span>
         </p>
         {loading ? (
           <div className="h-16 shimmer rounded" />

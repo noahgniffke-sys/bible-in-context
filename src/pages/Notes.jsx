@@ -78,7 +78,7 @@ function Notes() {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-[var(--text-primary)]">Study Tools</h2>
+        <h2 className="display text-2xl text-[var(--text-primary)]">Study Tools</h2>
         {user && notesSyncing && (
           <span className="text-xs text-[var(--text-muted)] flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-secondary)] animate-pulse" />

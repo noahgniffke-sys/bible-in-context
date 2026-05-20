@@ -137,7 +137,7 @@ function PlanDetail() {
         ) : (
           <button
             onClick={subscribe}
-            className="w-full mt-4 py-3 bg-[var(--accent-secondary)] text-white rounded-xl font-bold active:scale-95"
+            className="themed-btn-primary w-full mt-4 py-3"
           >
             Start Plan
           </button>

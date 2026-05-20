@@ -100,10 +100,10 @@ function PrayerJournal() {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-[var(--text-primary)]">Prayer Journal</h2>
+        <h2 className="display text-2xl text-[var(--text-primary)]">Prayer Journal</h2>
         <button
           onClick={() => openEditor()}
-          className="px-4 py-2 bg-[var(--accent-secondary)] text-white rounded-lg font-medium text-sm active:scale-95"
+          className="themed-btn-primary px-4 py-2 text-sm"
         >
           + New
         </button>
@@ -138,7 +138,7 @@ function PrayerJournal() {
             <button
               onClick={savePrayer}
               disabled={!content.trim()}
-              className="flex-1 py-2 rounded-lg bg-[var(--accent-secondary)] text-white font-medium text-sm disabled:opacity-50 active:scale-95"
+              className="themed-btn-primary flex-1 py-2 text-sm disabled:opacity-50"
             >
               {editingId ? 'Update' : 'Save'}
             </button>

@@ -252,7 +252,7 @@ function ChapterView() {
             <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4"><path d="M15 19L8 12L15 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </Link>
         ) : <div className="w-6" />}
-        <h2 className="text-xl font-bold text-[var(--text-primary)]">
+        <h2 className="display text-2xl text-[var(--text-primary)]">
           {formatChapterRef(bookId, chapterNum)}
         </h2>
         {hasNext ? (

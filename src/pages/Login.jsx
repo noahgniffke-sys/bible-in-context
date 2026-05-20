@@ -92,13 +92,23 @@ function Login() {
       <div className="w-full max-w-sm">
         <BackButton label="Back" to="/" />
 
-        {/* Logo */}
+        {/* Logo + wordmark */}
         <div className="text-center my-8">
-          <div className="text-6xl mb-4">{'✞'}</div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+          <div
+            className="text-6xl mb-4 inline-block"
+            style={{
+              color: 'var(--gold-accent)',
+              textShadow: '0 0 24px var(--gold-glow)',
+              filter: 'drop-shadow(0 4px 8px var(--accent-glow))',
+            }}
+          >
+            {'✞'}
+          </div>
+          <h1 className="brand-wordmark text-2xl mb-2">
             Bible in Context
           </h1>
-          <p className="text-[var(--text-secondary)] text-sm">
+          <div className="themed-divider my-3" style={{ width: '40%' }} />
+          <p className="text-[var(--text-secondary)] text-sm italic" style={{ fontFamily: 'var(--font-body)' }}>
             Sign in to sync your notes, highlights, and prayers across devices.
           </p>
         </div>
@@ -110,7 +120,8 @@ function Login() {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white text-black rounded-xl font-medium text-sm border border-gray-200 disabled:opacity-50 active:scale-95"
+            className="themed-btn w-full flex items-center justify-center gap-3 py-3.5 px-4 text-sm disabled:opacity-50"
+            style={{ background: '#ffffff', color: '#1f1f1f', border: '1px solid #d6d6d6' }}
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -124,7 +135,8 @@ function Login() {
           <button
             onClick={handleAppleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-black text-white rounded-xl font-medium text-sm border border-gray-700 disabled:opacity-50 active:scale-95"
+            className="themed-btn w-full flex items-center justify-center gap-3 py-3.5 px-4 text-sm disabled:opacity-50"
+            style={{ background: '#0a0a0a', color: '#ffffff', border: '1px solid #2a2a2a' }}
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
               <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>

@@ -48,23 +48,23 @@ function VerseOfTheDay() {
 
   return (
     <div
-      className="rounded-2xl mb-6 overflow-hidden"
+      className="rounded-2xl mb-6 overflow-hidden relative"
       style={{
         background:
           'linear-gradient(135deg, color-mix(in oklab, var(--accent-primary) 22%, var(--bg-card)) 0%, var(--bg-card) 60%, color-mix(in oklab, var(--gold-accent) 12%, var(--bg-card)) 100%)',
         border: '1px solid var(--border-primary)',
-        boxShadow: '0 8px 28px -16px var(--accent-glow)',
+        boxShadow: '0 8px 28px -16px var(--accent-glow), 0 1px 0 color-mix(in oklab, var(--gold-accent) 40%, transparent) inset',
       }}
     >
       <div className="p-5">
         <div className="flex items-center justify-between mb-3">
           <p
-            className="text-[10px] uppercase tracking-[0.3em] font-bold"
-            style={{ color: 'var(--gold-accent)' }}
+            className="text-[10px] uppercase tracking-[0.3em] font-bold display"
+            style={{ color: 'var(--gold-accent)', fontFamily: 'var(--font-display)' }}
           >
-            Verse of the Day
+            ✦ Verse of the Day ✦
           </p>
-          <span className="text-xs text-[var(--text-muted)]">{verse.ref}</span>
+          <span className="verse-ref text-xs">{verse.ref}</span>
         </div>
 
         <button
@@ -72,12 +72,12 @@ function VerseOfTheDay() {
           className="text-left w-full active:scale-[0.99] transition-transform"
         >
           <p
-            className="text-lg leading-relaxed text-[var(--text-primary)] mb-1"
-            style={{ fontFamily: 'Georgia, "Cormorant Garamond", serif' }}
+            className="text-lg leading-relaxed text-[var(--text-primary)] mb-1 verse-text"
+            style={{ fontFamily: 'var(--font-body)', fontSize: '1.15rem', fontStyle: 'italic' }}
           >
             "{verse.text}"
           </p>
-          <p className="text-xs text-[var(--accent-secondary)] font-medium mt-2">
+          <p className="text-xs text-[var(--accent-light)] font-medium mt-2 tracking-wide">
             Open in Bible →
           </p>
         </button>

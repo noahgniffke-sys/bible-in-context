@@ -1,127 +1,168 @@
 @import "tailwindcss";
 
-/* Toast slide-in animation */
-@keyframes slide-in-down {
-  from { opacity: 0; transform: translateY(-16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-slide-in-down {
-  animation: slide-in-down 0.25s ease-out;
-}
+/* ==========================================================================
+   BIBLE IN CONTEXT — DUAL-THEME DESIGN SYSTEM (v2)
+   Dark mode  = medieval scripture / gothic cathedral / forged steel
+   Light mode = illuminated manuscript / royal storybook / heavenly garden
+   Same layout & component sizing across both — atmosphere does the work.
+   ========================================================================== */
 
-/* ============================================ */
-/* DARK THEME (default) — Noah                   */
-/* ============================================ */
+/* ----------------------------------- DARK THEME --------------------------- */
 :root, [data-theme="dark"] {
-  /* Backgrounds */
-  --bg-primary: #0a0a0a;
-  --bg-surface: #111111;
-  --bg-elevated: #1a1a1a;
-  --bg-card: #141414;
+  /* Backgrounds — warm charcoal, never pure black. Suggests cathedral stone + leather. */
+  --bg-primary:   #0a0606;
+  --bg-surface:   #14090a;
+  --bg-elevated:  #1d1012;
+  --bg-card:      #170c0e;
 
-  /* Blood red accents */
-  --accent-primary: #8b0000;
-  --accent-secondary: #c41e1e;
-  --accent-light: #e05555;
-  --accent-glow: rgba(139, 0, 0, 0.4);
+  /* Blood red — the principal accent. */
+  --accent-primary:   #6b0d0d;
+  --accent-secondary: #a01818;
+  --accent-light:     #d63b3b;
+  --accent-glow:      rgba(160, 24, 24, 0.45);
 
-  /* Parchment text */
-  --text-primary: #e8dcc8;
-  --text-secondary: #b0a48e;
-  --text-muted: #7a7060;
+  /* Parchment text — never pure white. Suggests aged vellum. */
+  --text-primary:   #f0e4cc;
+  --text-secondary: #b8aa90;
+  --text-muted:     #80735c;
 
-  /* Borders */
-  --border-primary: #2a2420;
-  --border-subtle: #1e1a16;
+  /* Borders + dividers — forged metal feel. */
+  --border-primary: #2c1d1a;
+  --border-subtle:  #1c1311;
 
-  /* Special accents */
+  /* Illuminated gold for emphasis (verse refs, highlights, page edges). */
   --gold-accent: #c9a84c;
-  --gold-glow: rgba(201, 168, 76, 0.4);
+  --gold-glow:   rgba(201, 168, 76, 0.42);
 
-  /* Verse highlight colors (25% opacity) */
-  --highlight-red: rgba(139, 0, 0, 0.25);
-  --highlight-orange: rgba(139, 74, 0, 0.25);
-  --highlight-yellow: rgba(201, 168, 76, 0.25);
-  --highlight-green: rgba(45, 90, 39, 0.25);
-  --highlight-blue: rgba(30, 58, 95, 0.25);
-  --highlight-purple: rgba(74, 35, 90, 0.25);
+  /* Verse highlight colors — warm, glassy. */
+  --highlight-red:    rgba(139, 0, 0, 0.28);
+  --highlight-orange: rgba(170, 95, 20, 0.28);
+  --highlight-yellow: rgba(201, 168, 76, 0.26);
+  --highlight-green:  rgba(60, 95, 50, 0.28);
+  --highlight-blue:   rgba(40, 70, 110, 0.28);
+  --highlight-purple: rgba(90, 40, 110, 0.28);
 
-  /* Status */
-  --accent-error: #ff4444;
-  --accent-success: #4caf50;
-  --accent-warning: #ff9800;
+  --accent-error:   #e34a4a;
+  --accent-success: #6db866;
+  --accent-warning: #d99834;
 
-  /* Scrollbar */
-  --scrollbar-thumb: #2a2420;
+  --scrollbar-thumb: #2c1d1a;
   --scrollbar-hover: #8b0000;
+
+  /* Typography */
+  --font-display: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-ui:      -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+
+  /* Atmospheric textures: very subtle grain + radial vignette */
+  --bg-texture:
+    radial-gradient(ellipse at top, rgba(107, 13, 13, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at bottom, rgba(0, 0, 0, 0.55) 0%, transparent 70%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.10 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  /* Card sheen — leather-bound feel */
+  --card-sheen: linear-gradient(140deg, rgba(255, 230, 200, 0.025) 0%, transparent 35%);
+  --card-shadow: 0 1px 0 rgba(255, 220, 180, 0.04) inset, 0 8px 28px rgba(0, 0, 0, 0.55);
+
+  /* Forged-button style — engraved/embossed feel */
+  --btn-bg:        linear-gradient(180deg, #2b1517 0%, #160b0c 100%);
+  --btn-bg-hover:  linear-gradient(180deg, #3a1c1f 0%, #1d0e10 100%);
+  --btn-border:    1px solid #3a2422;
+  --btn-shadow:    0 1px 0 rgba(255, 220, 200, 0.06) inset, 0 6px 14px rgba(0, 0, 0, 0.5);
+  --btn-text:      var(--text-primary);
+
+  --color-scheme: dark;
 }
 
-/* ============================================ */
-/* LIGHT THEME — Allie                           */
-/* ============================================ */
+/* ----------------------------------- LIGHT THEME -------------------------- */
 [data-theme="light"] {
-  /* Backgrounds */
-  --bg-primary: #faf8f0;
-  --bg-surface: #f5f0e4;
-  --bg-elevated: #ffffff;
-  --bg-card: #fffef8;
+  /* Backgrounds — warm parchment cream, never pure white. */
+  --bg-primary:   #faf6ed;
+  --bg-surface:   #f5eedb;
+  --bg-elevated:  #fffdf6;
+  --bg-card:      #fffdf6;
 
-  /* Pastoral accents */
-  --accent-primary: #5a7c3a;
+  /* Pastoral green — primary accent. */
+  --accent-primary:   #5a7c3a;
   --accent-secondary: #7ba05b;
-  --accent-light: #a3c47a;
-  --accent-glow: rgba(90, 124, 58, 0.3);
+  --accent-light:     #a3c47a;
+  --accent-glow:      rgba(90, 124, 58, 0.35);
 
-  /* Warm text */
-  --text-primary: #2c2417;
+  /* Warm dark ink */
+  --text-primary:   #2c2417;
   --text-secondary: #5a4e3c;
-  --text-muted: #8a7e6c;
+  --text-muted:     #8a7e6c;
 
-  /* Borders */
   --border-primary: #d4c9b0;
-  --border-subtle: #e8dfc8;
+  --border-subtle:  #e8dfc8;
 
-  /* Special accents */
+  /* Royal gold — for "context" letters & decorative touches */
   --gold-accent: #b8960c;
-  --gold-glow: rgba(184, 150, 12, 0.3);
+  --gold-glow:   rgba(184, 150, 12, 0.32);
 
-  /* Pink accent */
-  --pink-accent: #d4a0a0;
+  /* Soft rose accent — for storybook touches */
+  --pink-accent: #d4859b;
+  --pink-glow:   rgba(212, 133, 155, 0.25);
 
-  /* Verse highlight colors (35% opacity for light bg) */
-  --highlight-red: rgba(220, 100, 100, 0.35);
-  --highlight-orange: rgba(220, 160, 80, 0.35);
-  --highlight-yellow: rgba(240, 210, 90, 0.35);
-  --highlight-green: rgba(120, 190, 100, 0.35);
-  --highlight-blue: rgba(100, 160, 220, 0.35);
-  --highlight-purple: rgba(170, 120, 200, 0.35);
+  --highlight-red:    rgba(220, 100, 100, 0.32);
+  --highlight-orange: rgba(220, 160, 80, 0.32);
+  --highlight-yellow: rgba(240, 210, 90, 0.32);
+  --highlight-green:  rgba(120, 190, 100, 0.32);
+  --highlight-blue:   rgba(100, 160, 220, 0.32);
+  --highlight-purple: rgba(170, 120, 200, 0.32);
 
-  /* Status */
-  --accent-error: #d32f2f;
-  --accent-success: #388e3c;
-  --accent-warning: #f57c00;
+  --accent-error:   #c0392b;
+  --accent-success: #4a8a3d;
+  --accent-warning: #d99834;
 
-  /* Scrollbar */
   --scrollbar-thumb: #d4c9b0;
   --scrollbar-hover: #5a7c3a;
+
+  --font-display: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-ui:      -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+
+  /* Atmosphere: soft radial wash + warm pink + cream paper noise */
+  --bg-texture:
+    radial-gradient(ellipse at top right, rgba(212, 133, 155, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse at bottom left, rgba(123, 160, 91, 0.13) 0%, transparent 60%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.40  0 0 0 0 0.15  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  --card-sheen: linear-gradient(140deg, rgba(255, 240, 220, 0.7) 0%, rgba(255, 250, 240, 0.0) 50%);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 6px 18px rgba(100, 80, 30, 0.10);
+
+  --btn-bg:        linear-gradient(180deg, #ffffff 0%, #f5eedb 100%);
+  --btn-bg-hover:  linear-gradient(180deg, #ffffff 0%, #ebe2c8 100%);
+  --btn-border:    1px solid var(--border-primary);
+  --btn-shadow:    0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 4px 10px rgba(100, 80, 30, 0.08);
+  --btn-text:      var(--text-primary);
+
+  --color-scheme: light;
 }
 
 /* ============================================ */
-/* BASE STYLES                                  */
+/* BASE                                         */
 /* ============================================ */
+html {
+  color-scheme: var(--color-scheme);
+}
 
 body {
   margin: 0;
   background-color: var(--bg-primary);
+  background-image: var(--bg-texture);
+  background-attachment: fixed;
   color: var(--text-primary);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-ui);
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
-  -moz-user-select: none;
   user-select: none;
   -webkit-overflow-scrolling: touch;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -131,21 +172,144 @@ body {
 }
 
 /* ============================================ */
-/* GLOW & GRADIENT EFFECTS                      */
+/* TYPOGRAPHY                                   */
 /* ============================================ */
 
-.glow-accent {
-  box-shadow: 0 0 20px var(--accent-glow);
+/* Verse text — serifed for reading scripture. */
+.verse-text,
+.font-serif {
+  font-family: var(--font-body) !important;
+  font-size: 1.05em;
+  letter-spacing: 0.005em;
+  line-height: 1.65;
 }
 
-.glow-gold {
-  box-shadow: 0 0 20px var(--gold-glow);
+/* Display headings (page titles, hero text). */
+h1, h2, .display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
 }
 
-.text-glow-accent {
-  text-shadow: 0 0 10px var(--accent-glow);
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] .display {
+  font-weight: 700;
 }
 
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] .display {
+  font-weight: 700;
+  letter-spacing: 0.005em;
+}
+
+/* Themed brand wordmark — the "Bible in Context" header. */
+.brand-wordmark {
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .brand-wordmark {
+  color: var(--text-primary);
+  text-shadow: 0 0 12px rgba(160, 24, 24, 0.3);
+}
+
+[data-theme="light"] .brand-wordmark {
+  color: var(--text-primary);
+  font-style: italic;
+}
+
+/* Verse references — gold illuminated feel */
+.verse-ref {
+  font-family: var(--font-display);
+  color: var(--gold-accent);
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+/* ============================================ */
+/* THEMED COMPONENTS                            */
+/* ============================================ */
+
+/* Card — leather/parchment depending on theme */
+.themed-card {
+  background-color: var(--bg-card);
+  background-image: var(--card-sheen);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+/* Forged / parchment button */
+.themed-btn {
+  background: var(--btn-bg);
+  border: var(--btn-border);
+  color: var(--btn-text);
+  box-shadow: var(--btn-shadow);
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: transform 60ms ease, background 120ms ease;
+}
+.themed-btn:hover { background: var(--btn-bg-hover); }
+.themed-btn:active { transform: scale(0.97); }
+
+/* Primary action button — bolder, themed accent */
+.themed-btn-primary {
+  background: linear-gradient(180deg, var(--accent-secondary) 0%, var(--accent-primary) 100%);
+  color: #fff;
+  border: 1px solid var(--accent-primary);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 6px 18px var(--accent-glow);
+  border-radius: 10px;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+[data-theme="light"] .themed-btn-primary {
+  background: linear-gradient(180deg, var(--accent-secondary) 0%, var(--accent-primary) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 4px 14px var(--accent-glow);
+}
+
+/* Ornamental divider — gothic flourish (dark) / vine (light) */
+.themed-divider {
+  height: 1px;
+  margin: 1rem auto;
+  width: 60%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--gold-accent) 20%,
+    var(--gold-accent) 80%,
+    transparent 100%
+  );
+  opacity: 0.5;
+  position: relative;
+}
+.themed-divider::before,
+.themed-divider::after {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--gold-accent);
+  opacity: 0.7;
+}
+[data-theme="dark"] .themed-divider::before { content: "✦"; left: 50%; transform: translate(-50%, -50%); font-size: 12px; background: var(--bg-primary); padding: 0 8px; }
+[data-theme="light"] .themed-divider::before { content: "❦"; left: 50%; transform: translate(-50%, -50%); font-size: 14px; background: var(--bg-primary); padding: 0 8px; }
+
+/* ============================================ */
+/* GLOW & GRADIENT EFFECTS                      */
+/* ============================================ */
+.glow-accent  { box-shadow: 0 0 24px var(--accent-glow); }
+.glow-gold    { box-shadow: 0 0 24px var(--gold-glow); }
+.text-glow-accent { text-shadow: 0 0 14px var(--accent-glow); }
 .text-accent-gradient {
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-light));
   -webkit-background-clip: text;
@@ -156,78 +320,38 @@ body {
 /* ============================================ */
 /* SCROLLBAR                                    */
 /* ============================================ */
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-hover);
-}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
 /* ============================================ */
 /* ANIMATIONS                                   */
 /* ============================================ */
+@keyframes slide-in-down { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+.animate-slide-in-down { animation: slide-in-down 0.25s ease-out; }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.fade-in-up {
-  animation: fadeInUp 0.15s ease-out forwards;
-}
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in-up { animation: fadeInUp 0.18s ease-out forwards; }
 
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-.scale-in {
-  animation: scaleIn 0.15s ease-out;
-}
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+.scale-in { animation: scaleIn 0.18s ease-out; }
 
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.slide-in-right {
-  animation: slideInRight 0.15s ease-out;
-}
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+.slide-in-right { animation: slideInRight 0.18s ease-out; }
 
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-.slide-in-left {
-  animation: slideInLeft 0.15s ease-out;
-}
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+.slide-in-left { animation: slideInLeft 0.18s ease-out; }
 
-@keyframes tabSlide {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-.tab-indicator {
-  animation: tabSlide 0.1s ease-out;
-}
+@keyframes tabSlide { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.tab-indicator { animation: tabSlide 0.12s ease-out; }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 .shimmer {
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.08) 50%,
     rgba(255, 255, 255, 0) 100%
   );
   background-size: 200% 100%;
@@ -240,57 +364,39 @@ body {
   70% { transform: scale(0.9); }
   100% { opacity: 1; transform: scale(1); }
 }
-.bounce-in {
-  animation: bounceIn 0.2s ease-out;
-}
+.bounce-in { animation: bounceIn 0.22s ease-out; }
 
-@keyframes pullRefreshSpin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-.pull-refresh-spin {
-  animation: pullRefreshSpin 0.8s linear infinite;
-}
+@keyframes pullRefreshSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.pull-refresh-spin { animation: pullRefreshSpin 0.8s linear infinite; }
 
 @keyframes pulseSubtle {
   0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 var(--accent-glow); }
-  50% { transform: scale(1.02); box-shadow: 0 0 10px 2px var(--accent-glow); }
+  50% { transform: scale(1.02); box-shadow: 0 0 12px 2px var(--accent-glow); }
 }
-.animate-pulse-subtle {
-  animation: pulseSubtle 2s ease-in-out infinite;
+.animate-pulse-subtle { animation: pulseSubtle 2.4s ease-in-out infinite; }
+
+/* Subtle ember/sparkle for verified badges in dark, gold sparkle in light */
+@keyframes sparkleFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
 }
+.sparkle-flicker { animation: sparkleFlicker 3s ease-in-out infinite; }
 
 /* ============================================ */
 /* UTILITY CLASSES                              */
 /* ============================================ */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
+.card-hover { transition: transform 100ms ease, box-shadow 100ms ease; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35); }
 
-.card-hover {
-  transition: transform 75ms ease, box-shadow 75ms ease;
-}
-.card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-}
-
-.press-effect {
-  transition: transform 50ms ease;
-}
-.press-effect:active {
-  transform: scale(0.97);
-}
+.press-effect { transition: transform 50ms ease; }
+.press-effect:active { transform: scale(0.97); }
 
 /* ============================================ */
 /* MOBILE TOUCH OPTIMIZATIONS                   */
 /* ============================================ */
-
 input, textarea, [contenteditable="true"], .verse-text {
   -webkit-user-select: text;
   -moz-user-select: text;
@@ -313,55 +419,35 @@ button:active, [role="button"]:active, .tap-feedback:active {
   transition: transform 50ms ease-out !important;
 }
 
-nav a:active {
-  transform: none;
-}
+nav a:active { transform: none; }
 
 .transition-all, .transition-colors, .transition-opacity, .transition-transform {
-  transition-duration: 75ms !important;
+  transition-duration: 90ms !important;
 }
 
-button:active, a:active {
-  transition-duration: 0ms !important;
-}
+button:active, a:active { transition-duration: 0ms !important; }
 
 @media (hover: none) and (pointer: coarse) {
-  *:hover {
-    transform: none !important;
-  }
+  *:hover { transform: none !important; }
   button:active, a:active, [role="button"]:active, .card-hover:active {
     transform: scale(0.95) !important;
     transition: none !important;
   }
 }
 
-nav a {
-  touch-action: manipulation;
-}
+nav a { touch-action: manipulation; }
+button { touch-action: manipulation; }
 
-button {
-  touch-action: manipulation;
-}
-
-.overflow-auto, .overflow-scroll {
-  -webkit-overflow-scrolling: touch;
-}
+.overflow-auto, .overflow-scroll { -webkit-overflow-scrolling: touch; }
 
 @media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  * {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  ::-webkit-scrollbar { display: none; }
+  * { -ms-overflow-style: none; scrollbar-width: none; }
 }
-
 
 /* ============================================ */
 /* SAFE AREA FOR NOTCHED DEVICES                */
 /* ============================================ */
-
 @supports (padding: env(safe-area-inset-top)) {
   header {
     padding-top: calc(12px + env(safe-area-inset-top)) !important;
@@ -369,4 +455,12 @@ button {
   nav {
     padding-bottom: env(safe-area-inset-bottom) !important;
   }
+}
+
+/* ============================================ */
+/* SELECTION COLORS                             */
+/* ============================================ */
+::selection {
+  background: var(--accent-glow);
+  color: var(--text-primary);
 }

@@ -14,11 +14,23 @@ function Layout() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col">
-      {/* Header */}
-      <header className="bg-[var(--bg-surface)] border-b border-[var(--border-primary)] px-4 py-3 flex items-center justify-center">
-        <h1 className="text-lg font-bold text-[var(--text-primary)] tracking-wide">
+      {/* Header — themed wordmark with subtle ornamentation */}
+      <header
+        className="px-4 py-3 flex flex-col items-center justify-center"
+        style={{
+          background: 'linear-gradient(180deg, var(--bg-surface) 0%, color-mix(in oklab, var(--bg-surface) 92%, var(--accent-primary) 8%) 100%)',
+          borderBottom: '1px solid var(--border-primary)',
+          boxShadow: '0 1px 0 color-mix(in oklab, var(--gold-accent) 28%, transparent) inset, 0 4px 14px rgba(0,0,0,0.18)',
+        }}
+      >
+        <h1 className="brand-wordmark text-lg">
           Bible in Context
         </h1>
+        <svg viewBox="0 0 120 8" className="w-32 h-2 mt-1 opacity-70" fill="none" aria-hidden="true">
+          <path d="M0 4 L48 4" stroke="var(--gold-accent)" strokeWidth="0.8" />
+          <path d="M72 4 L120 4" stroke="var(--gold-accent)" strokeWidth="0.8" />
+          <path d="M60 0 L64 4 L60 8 L56 4 Z" fill="var(--gold-accent)" />
+        </svg>
       </header>
 
       {/* Main content */}

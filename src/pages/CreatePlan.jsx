@@ -113,7 +113,7 @@ function CreatePlan() {
         <BackButton label="Plans" to="/plans" />
         <div className="mt-8 text-center">
           <p className="text-[var(--text-secondary)] mb-4">Sign in to create a Bible plan.</p>
-          <Link to="/login" className="px-6 py-3 bg-[var(--accent-secondary)] text-white rounded-lg font-medium">
+          <Link to="/login" className="themed-btn-primary inline-block px-6 py-3">
             Sign In
           </Link>
         </div>
@@ -125,7 +125,7 @@ function CreatePlan() {
     <div className="p-4">
       <BackButton label="Plans" to="/plans" />
 
-      <h2 className="text-xl font-bold text-[var(--text-primary)] mt-4 mb-4">Create Bible Plan</h2>
+      <h2 className="display text-2xl text-[var(--text-primary)] mt-4 mb-4">Create Bible Plan</h2>
 
       {error && <ErrorBanner message={error} className="mb-4" />}
 
@@ -234,7 +234,7 @@ function CreatePlan() {
       <button
         onClick={handlePublish}
         disabled={loading || !title.trim()}
-        className="w-full py-3 bg-[var(--accent-secondary)] text-white rounded-xl font-bold disabled:opacity-50 active:scale-95"
+        className="themed-btn-primary w-full py-3 disabled:opacity-50"
       >
         {loading ? 'Publishing...' : 'Publish Plan'}
       </button>
