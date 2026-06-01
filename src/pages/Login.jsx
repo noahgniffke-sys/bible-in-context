@@ -6,6 +6,22 @@ import ErrorBanner from '../components/ErrorBanner'
 import BackButton from '../components/BackButton'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
+let socialLoginInitialized = false
+async function ensureSocialLoginInitialized() {
+  if (socialLoginInitialized) return
+  const { SocialLogin } = await import('@capgo/capacitor-social-login')
+  await SocialLogin.initialize({
+    apple: {
+      clientId: 'com.noahgniffke.bibleincontext',
+    },
+    google: {
+      iOSClientId: import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID,
+      webClientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID,
+    },
+  })
+  socialLoginInitialized = true
+}
+
 function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -19,12 +35,12 @@ function Login() {
 
     try {
       if (isNative) {
-        // Native: use Capacitor Social Login
+        await ensureSocialLoginInitialized()
         const { SocialLogin } = await import('@capgo/capacitor-social-login')
         const result = await SocialLogin.login({
           provider: 'google',
           options: {
-            clientId: import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID,
+            scopes: ['email', 'profile'],
           },
         })
 
@@ -60,8 +76,14 @@ function Login() {
 
     try {
       if (isNative) {
+        await ensureSocialLoginInitialized()
         const { SocialLogin } = await import('@capgo/capacitor-social-login')
-        const result = await SocialLogin.login({ provider: 'apple' })
+        const result = await SocialLogin.login({
+          provider: 'apple',
+          options: {
+            scopes: ['email', 'name'],
+          },
+        })
 
         if (result?.result?.idToken) {
           const { error: authError } = await supabase.auth.signInWithIdToken({

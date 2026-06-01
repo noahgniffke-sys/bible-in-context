@@ -10,6 +10,9 @@ import ErrorBanner from '../components/ErrorBanner'
 import EmptyState from '../components/EmptyState'
 import TabBar from '../components/TabBar'
 import VerifiedBadge from '../components/VerifiedBadge'
+import { useConfirm } from '../components/ConfirmDialog'
+import { useToast } from '../components/Toast'
+import { blockUser, reportContent } from '../lib/social-moderation'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 const PROFILE_TABS = [
@@ -21,6 +24,8 @@ function PublicProfile() {
   const { username } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+  const confirm = useConfirm()
+  const toast = useToast()
 
   const [profile, setProfile] = useState(null)
   const [highlights, setHighlights] = useState([])
@@ -61,25 +66,27 @@ function PublicProfile() {
     setLoading(true)
     setError(null)
     try {
-      // Get profile
-      const { data: profileData, error: profileError } = await supabase
+      // Get profile (avoid .single() — hangs in this project)
+      const { data: profileRows, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('username', username)
-        .single()
+        .limit(1)
 
       if (profileError) throw profileError
+      const profileData = profileRows?.[0]
+      if (!profileData) throw new Error('Profile not found')
       setProfile(profileData)
 
-      // Check if following
+      // Check if following (avoid .single() — hangs in this project)
       if (user && profileData.id !== user.id) {
-        const { data: followData } = await supabase
+        const { data: followRows } = await supabase
           .from('follows')
           .select('id')
           .eq('follower_id', user.id)
           .eq('following_id', profileData.id)
-          .single()
-        setInitialFollowing(!!followData)
+          .limit(1)
+        setInitialFollowing(Boolean(followRows?.length))
       }
 
       // Get public highlights and notes
@@ -103,6 +110,42 @@ function PublicProfile() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleBlock() {
+    if (!profile) return
+    const ok = await confirm({
+      title: `Block @${profile.username}?`,
+      message: "You won't see their highlights or notes, and they'll be removed from your feed.",
+      confirmLabel: 'Block',
+      destructive: true,
+    })
+    if (!ok) return
+    triggerHaptic(HapticStyle.WARNING)
+    const { error } = await blockUser(profile.id)
+    if (error) { toast.error('Could not block user'); return }
+    toast.info(`@${profile.username} blocked`)
+    navigate(-1)
+  }
+
+  async function handleReport() {
+    if (!profile) return
+    const ok = await confirm({
+      title: 'Report this user?',
+      message: 'Our team will review this profile for objectionable content within 24 hours.',
+      confirmLabel: 'Report',
+      destructive: true,
+    })
+    if (!ok) return
+    triggerHaptic(HapticStyle.WARNING)
+    const { error } = await reportContent({
+      reportedUserId: profile.id,
+      type: 'profile',
+      contentId: profile.id,
+      contentText: profile.bio || profile.display_name,
+    })
+    if (error) { toast.error('Could not submit report'); return }
+    toast.info('Thank you. This profile has been reported for review.')
   }
 
   if (loading) {
@@ -158,13 +201,24 @@ function PublicProfile() {
         </div>
 
         {!isOwnProfile && user && (
-          <button
-            onClick={toggleFollow}
-            disabled={followLoading}
-            className={isFollowing ? 'themed-btn mt-4 px-6 py-2 text-sm' : 'themed-btn-primary mt-4 px-6 py-2 text-sm'}
-          >
-            {isFollowing ? 'Following' : 'Follow'}
-          </button>
+          <>
+            <button
+              onClick={toggleFollow}
+              disabled={followLoading}
+              className={isFollowing ? 'themed-btn mt-4 px-6 py-2 text-sm' : 'themed-btn-primary mt-4 px-6 py-2 text-sm'}
+            >
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
+            <div className="flex justify-center gap-4 mt-3 text-xs text-[var(--text-muted)]">
+              <button onClick={handleReport} className="hover:text-[var(--text-secondary)] transition-colors">
+                Report
+              </button>
+              <span aria-hidden="true">·</span>
+              <button onClick={handleBlock} className="hover:text-[var(--text-secondary)] transition-colors">
+                Block
+              </button>
+            </div>
+          </>
         )}
       </div>
 

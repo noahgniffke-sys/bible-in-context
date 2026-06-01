@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react'
+import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 const ConfirmContext = createContext(null)
 
@@ -12,17 +13,20 @@ export function ConfirmProvider({ children }) {
   const [dialog, setDialog] = useState(null)
 
   const confirm = useCallback(({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel', destructive = false }) => {
+    triggerHaptic(destructive ? HapticStyle.WARNING : HapticStyle.LIGHT)
     return new Promise((resolve) => {
       setDialog({ title, message, confirmLabel, cancelLabel, destructive, resolve })
     })
   }, [])
 
   const handleConfirm = () => {
+    triggerHaptic(dialog?.destructive ? HapticStyle.HEAVY : HapticStyle.MEDIUM)
     dialog?.resolve(true)
     setDialog(null)
   }
 
   const handleCancel = () => {
+    triggerHaptic(HapticStyle.LIGHT)
     dialog?.resolve(false)
     setDialog(null)
   }

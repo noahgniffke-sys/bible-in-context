@@ -1,4 +1,12 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { triggerHaptic, HapticStyle } from '../lib/haptics'
+
+const toastHaptic = {
+  success: HapticStyle.SUCCESS,
+  error: HapticStyle.ERROR,
+  warning: HapticStyle.WARNING,
+  info: HapticStyle.LIGHT,
+}
 
 const ToastContext = createContext(null)
 
@@ -13,6 +21,7 @@ export function ToastProvider({ children }) {
   const idRef = useRef(0)
 
   const show = useCallback((message, type = 'info', duration = 3000) => {
+    triggerHaptic(toastHaptic[type] || HapticStyle.LIGHT)
     const id = ++idRef.current
     setToasts(prev => [...prev, { id, message, type }])
     setTimeout(() => {

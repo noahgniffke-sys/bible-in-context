@@ -1,5 +1,5 @@
 // Bible text — fully bundled, no API needed
-// KJV, WEB, ASV — all public domain
+// BSB, KJV, WEB, ASV, YLT — all public domain
 // Data loaded per-book via dynamic import for fast initial load
 
 const bookCache = {}
@@ -7,6 +7,7 @@ let lemmaIndexCache = null
 let strongsToVersesCache = null
 
 const COPYRIGHT = {
+  BSB: 'Berean Standard Bible — Public Domain',
   KJV: 'King James Version — Public Domain',
   WEB: 'World English Bible — Public Domain',
   ASV: 'American Standard Version — Public Domain',
@@ -14,13 +15,23 @@ const COPYRIGHT = {
 }
 
 const TRANSLATION_NAMES = {
+  BSB: 'Berean Standard Bible',
   KJV: 'King James Version',
   WEB: 'World English Bible',
   ASV: 'American Standard Version',
   YLT: "Young's Literal Translation",
 }
 
-export const AVAILABLE_TRANSLATIONS = ['WEB', 'KJV', 'ASV', 'YLT']
+// One-line descriptors shown in the translation picker to help users choose.
+const TRANSLATION_DESC = {
+  BSB: 'Modern & accurate · Recommended',
+  WEB: 'Modern, readable',
+  KJV: 'Classic, 1611',
+  ASV: 'Formal, 1901',
+  YLT: 'Ultra-literal, 1898',
+}
+
+export const AVAILABLE_TRANSLATIONS = ['BSB', 'WEB', 'KJV', 'ASV', 'YLT']
 
 async function loadBook(bookId, translation) {
   const key = `${translation}_${bookId}`
@@ -29,7 +40,9 @@ async function loadBook(bookId, translation) {
   const id = bookId.toLowerCase()
   try {
     let module
-    if (translation === 'WEB') {
+    if (translation === 'BSB') {
+      module = await import(`../data/bible/bsb/${id}.json`)
+    } else if (translation === 'WEB') {
       module = await import(`../data/bible/web/${id}.json`)
     } else if (translation === 'ASV') {
       module = await import(`../data/bible/asv/${id}.json`)
@@ -275,4 +288,8 @@ export function setTranslation(translation) {
 
 export function getTranslationName(code) {
   return TRANSLATION_NAMES[code] || code
+}
+
+export function getTranslationDescription(code) {
+  return TRANSLATION_DESC[code] || ''
 }

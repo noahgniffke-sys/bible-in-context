@@ -26,7 +26,12 @@ dist-ssr
 # Environment
 .env
 .env.local
+.env.*.local
 
-# Certificates
+# Certificates & keys (Apple Sign-In, push, etc.)
 .cert/
 .vercel
+*.p8
+*.p12
+*.pem
+*.mobileprovision

@@ -1,4 +1,11 @@
+import { triggerHaptic, HapticStyle } from '../lib/haptics'
+
 function ToggleSwitch({ label, description, value, onChange }) {
+  function handleClick(e) {
+    triggerHaptic(HapticStyle.MEDIUM)
+    if (onChange) onChange(e)
+  }
+
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -6,7 +13,7 @@ function ToggleSwitch({ label, description, value, onChange }) {
         {description && <p className="text-sm text-[var(--text-muted)]">{description}</p>}
       </div>
       <button
-        onClick={onChange}
+        onClick={handleClick}
         className={`w-12 h-7 rounded-full transition-all ${
           value ? 'bg-[var(--accent-secondary)]' : 'bg-[var(--bg-surface)]'
         }`}

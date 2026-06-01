@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 // Smart back button: prefer browser history (the page the user just came from)
 // over an explicit `to` target. `to` is now a deep-link fallback used only when
@@ -8,6 +9,7 @@ function BackButton({ label, to, fallback = '/' }) {
   const navigate = useNavigate()
 
   function handleClick() {
+    triggerHaptic(HapticStyle.LIGHT)
     // React Router stores its own idx on history.state. idx > 0 means we have
     // app-internal history we can pop. Otherwise we're at the entry point.
     const idx = window.history.state?.idx ?? 0

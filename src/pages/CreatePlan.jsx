@@ -28,6 +28,7 @@ function CreatePlan() {
   const [category, setCategory] = useState('devotional')
   const [emoji, setEmoji] = useState('📖')
   const [days, setDays] = useState([{ title: '', verseRefs: '', prompt: '' }])
+  const [isPublic, setIsPublic] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -79,7 +80,7 @@ function CreatePlan() {
         category,
         cover_emoji: emoji,
         total_days: days.length,
-        is_published: true,
+        is_published: isPublic,
       }]).select().single()
 
       if (planError) throw planError
@@ -231,12 +232,39 @@ function CreatePlan() {
         + Add Day
       </button>
 
+      <div
+        role="button"
+        onClick={() => setIsPublic(!isPublic)}
+        className="flex items-center justify-between px-3 py-3 rounded-xl border border-[var(--border-primary)] cursor-pointer mb-3"
+      >
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: 18 }}>{isPublic ? '🌍' : '🔒'}</span>
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              {isPublic ? 'Public plan' : 'Private plan'}
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              {isPublic ? 'Anyone can discover and follow this plan' : 'Only you can see and use this plan'}
+            </p>
+          </div>
+        </div>
+        <div
+          className="w-10 h-6 rounded-full relative transition-colors flex-shrink-0"
+          style={{ backgroundColor: isPublic ? 'var(--accent-secondary)' : 'var(--border-primary)' }}
+        >
+          <div
+            className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+            style={{ transform: isPublic ? 'translateX(18px)' : 'translateX(2px)' }}
+          />
+        </div>
+      </div>
+
       <button
         onClick={handlePublish}
         disabled={loading || !title.trim()}
         className="themed-btn-primary w-full py-3 disabled:opacity-50"
       >
-        {loading ? 'Publishing...' : 'Publish Plan'}
+        {loading ? 'Publishing...' : isPublic ? 'Publish Plan' : 'Save Plan'}
       </button>
     </div>
   )

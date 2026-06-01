@@ -10,6 +10,7 @@ import { getStrongsForVerse, getLanguageForBook, adaptWordsToTranslation, genera
 import { getCommentary } from '../lib/commentary'
 import { shareVerse } from '../lib/share'
 import { getBiblicalConnections } from '../lib/connections'
+import { validateText } from '../lib/moderation'
 import BackButton from '../components/BackButton'
 import ErrorBanner from '../components/ErrorBanner'
 import { useToast } from '../components/Toast'
@@ -51,6 +52,7 @@ function VerseContext() {
   const existingNote = notes.find(n => n.verse_ref === verseRef)
 
   const [noteText, setNoteText] = useState(existingNote?.content || '')
+  const [noteIsPublic, setNoteIsPublic] = useState(existingNote?.is_public ?? false)
   const [showNoteEditor, setShowNoteEditor] = useState(false)
 
   // Keep editor text in sync when navigating to a new verse or when notes load from cloud.
@@ -58,7 +60,8 @@ function VerseContext() {
   useEffect(() => {
     if (showNoteEditor) return
     setNoteText(existingNote?.content || '')
-  }, [verseRef, existingNote?.content, showNoteEditor])
+    setNoteIsPublic(existingNote?.is_public ?? false)
+  }, [verseRef, existingNote?.content, existingNote?.is_public, showNoteEditor])
 
   useEffect(() => {
     async function loadData() {
@@ -257,18 +260,28 @@ function VerseContext() {
   }
 
   async function saveNote() {
+    // Public notes are visible to other users, so screen them for objectionable
+    // language before they can be shared (App Store Guideline 1.2).
+    if (noteIsPublic && noteText.trim()) {
+      const check = validateText(noteText, 2000, 'Note')
+      if (!check.valid) {
+        triggerHaptic(HapticStyle.ERROR)
+        toast.error(check.error)
+        return
+      }
+    }
     triggerHaptic(HapticStyle.SUCCESS)
     const existing = notes.find(n => n.verse_ref === verseRef)
     if (!noteText.trim()) {
       if (existing) await removeNote(existing.id)
     } else if (existing) {
-      await updateNote(existing.id, { content: noteText.trim() })
+      await updateNote(existing.id, { content: noteText.trim(), is_public: noteIsPublic })
     } else {
       await addNote({
         verse_ref: verseRef,
         content: noteText.trim(),
         verse_text: verseData?.text || '',
-        is_public: false,
+        is_public: noteIsPublic,
         translation,
       })
     }
@@ -474,6 +487,32 @@ function VerseContext() {
             placeholder="Write your note about this verse..."
             className="w-full bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-lg p-3 text-[var(--text-primary)] text-sm resize-none min-h-[100px] focus:outline-none focus:border-[var(--accent-secondary)]"
           />
+          <div
+            role="button"
+            onClick={() => { setNoteIsPublic(!noteIsPublic); triggerHaptic(HapticStyle.LIGHT) }}
+            className="flex items-center justify-between mt-3 px-3 py-2 rounded-lg border border-[var(--border-primary)] cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <span style={{ fontSize: 16 }}>{noteIsPublic ? '🌍' : '🔒'}</span>
+              <div>
+                <p className="text-sm font-medium text-[var(--text-primary)]">
+                  {noteIsPublic ? 'Public note' : 'Private note'}
+                </p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  {noteIsPublic ? 'Anyone can see this in your profile' : 'Only you can see this'}
+                </p>
+              </div>
+            </div>
+            <div
+              className="w-10 h-6 rounded-full relative transition-colors"
+              style={{ backgroundColor: noteIsPublic ? 'var(--accent-secondary)' : 'var(--border-primary)' }}
+            >
+              <div
+                className="absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+                style={{ transform: noteIsPublic ? 'translateX(18px)' : 'translateX(2px)' }}
+              />
+            </div>
+          </div>
           <div className="flex gap-2 mt-2">
             <button
               onClick={saveNote}

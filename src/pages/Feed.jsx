@@ -6,11 +6,16 @@ import { parseVerseRef, formatVerseRef } from '../lib/bible-books'
 import { formatTimeAgo } from '../lib/utils'
 import EmptyState from '../components/EmptyState'
 import ErrorBanner from '../components/ErrorBanner'
+import { useConfirm } from '../components/ConfirmDialog'
+import { useToast } from '../components/Toast'
+import { getBlockedUserIds, reportContent } from '../lib/social-moderation'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 function Feed() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const confirm = useConfirm()
+  const toast = useToast()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -36,7 +41,17 @@ function Feed() {
         return
       }
 
-      const followingIds = follows.map(f => f.following_id)
+      // Don't surface content from users I've blocked.
+      const blockedIds = await getBlockedUserIds()
+      const followingIds = follows
+        .map(f => f.following_id)
+        .filter(id => !blockedIds.includes(id))
+
+      if (followingIds.length === 0) {
+        setItems([])
+        setLoading(false)
+        return
+      }
 
       // Get their public highlights and notes
       const [highlightsResult, notesResult] = await Promise.all([
@@ -67,6 +82,27 @@ function Feed() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleReport(item) {
+    const ok = await confirm({
+      title: 'Report this content?',
+      message: 'Our team will review it for objectionable material within 24 hours.',
+      confirmLabel: 'Report',
+      destructive: true,
+    })
+    if (!ok) return
+    triggerHaptic(HapticStyle.WARNING)
+    const { error } = await reportContent({
+      reportedUserId: item.user_id,
+      type: item.type,
+      contentId: item.id,
+      contentText: item.content || item.verse_text,
+    })
+    if (error) { toast.error('Could not submit report'); return }
+    // Hide the reported item immediately so the reporter stops seeing it.
+    setItems(prev => prev.filter(i => i.id !== item.id))
+    toast.info('Thank you. This content has been reported for review.')
   }
 
   if (!user) {
@@ -155,6 +191,15 @@ function Feed() {
                 {item.type === 'note' && item.content && (
                   <p className="text-sm text-[var(--text-secondary)] mt-2">{item.content}</p>
                 )}
+
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={() => handleReport(item)}
+                    className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-error)] transition-colors"
+                  >
+                    Report
+                  </button>
+                </div>
               </div>
             )
           })}

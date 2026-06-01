@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getBookById, formatChapterRef } from '../lib/bible-books'
 import { expandBookNames } from '../lib/utils'
-import { getChapter, getTranslation, setTranslation, getTranslationName, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
+import { getChapter, getTranslation, setTranslation, getTranslationName, getTranslationDescription, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
 import { getStudyNote } from '../lib/study'
 import { getCommentary } from '../lib/commentary'
 import { getJFBCommentary } from '../lib/jfb'
@@ -36,6 +36,25 @@ function ChapterView() {
 
   const { items: highlights, add: addHighlight, update: updateHighlight } = useUserData('highlights')
   const { items: notes } = useUserData('notes')
+  const { items: bookmarks, add: addBookmark, remove: removeBookmark } = useUserData('bookmarks')
+
+  const chapterRef = `${bookId}.${chapterNum}`
+  const existingBookmark = bookmarks.find(b => b.verse_ref === chapterRef)
+
+  function toggleBookmark() {
+    triggerHaptic(HapticStyle.LIGHT)
+    if (existingBookmark) {
+      removeBookmark(existingBookmark.id)
+      toast.success('Bookmark removed')
+      return
+    }
+    if (bookmarks.length >= 5) {
+      toast.error('You can save up to 5 bookmarks. Delete one to add another.')
+      return
+    }
+    addBookmark({ verse_ref: chapterRef })
+    toast.success('Chapter bookmarked')
+  }
 
   const fetchChapter = useCallback(async () => {
     setLoading(true)
@@ -235,6 +254,7 @@ function ChapterView() {
                   <div>
                     <span className={`text-sm font-bold ${currentTranslation === code ? 'text-[var(--accent-secondary)]' : 'text-[var(--text-primary)]'}`}>{code}</span>
                     <p className="text-xs text-[var(--text-muted)]">{getTranslationName(code)}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] opacity-70">{getTranslationDescription(code)}</p>
                   </div>
                   {currentTranslation === code && <span className="text-[var(--accent-secondary)] text-sm">✓</span>}
                 </button>
@@ -252,9 +272,27 @@ function ChapterView() {
             <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4"><path d="M15 19L8 12L15 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </Link>
         ) : <div className="w-6" />}
-        <h2 className="display text-2xl text-[var(--text-primary)]">
-          {formatChapterRef(bookId, chapterNum)}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="display text-2xl text-[var(--text-primary)]">
+            {formatChapterRef(bookId, chapterNum)}
+          </h2>
+          <button
+            onClick={toggleBookmark}
+            aria-label={existingBookmark ? 'Remove bookmark' : 'Bookmark chapter'}
+            className="p-1 min-h-[auto] min-w-[auto]"
+            style={{ color: existingBookmark ? 'var(--gold-accent)' : 'var(--text-muted)' }}
+          >
+            {existingBookmark ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 3a2 2 0 0 0-2 2v16l8-4 8 4V5a2 2 0 0 0-2-2H6z" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+            )}
+          </button>
+        </div>
         {hasNext ? (
           <Link to={`/bible/${bookId}/${chapterNum + 1}`} onClick={() => triggerHaptic(HapticStyle.LIGHT)}
             className="text-[var(--accent-secondary)] text-sm font-medium flex items-center gap-1 min-h-[auto] min-w-[auto]">

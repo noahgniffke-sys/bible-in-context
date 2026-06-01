@@ -6,8 +6,8 @@ import { parseVerseRef, formatVerseRef } from '../lib/bible-books'
 import { formatTimeAgo } from '../lib/utils'
 import EmptyState from '../components/EmptyState'
 import TabBar from '../components/TabBar'
+import SwipeToDelete from '../components/SwipeToDelete'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
-import { useConfirm } from '../components/ConfirmDialog'
 
 const TOOL_TABS = [
   { key: 'notes', label: 'Notes' },
@@ -19,42 +19,31 @@ function Notes() {
   const [tab, setTab] = useState('notes')
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
-  const confirm = useConfirm()
   const { user } = useAuth()
 
-  const { items: notes, remove: removeNote, syncing: notesSyncing } = useUserData('notes')
+  const { items: notes, remove: removeNote, update: updateNote, syncing: notesSyncing } = useUserData('notes')
   const { items: highlights, remove: removeHighlight } = useUserData('highlights')
   const { items: bookmarks, remove: removeBookmark } = useUserData('bookmarks')
 
   function handleVerseNav(verseRef) {
     triggerHaptic(HapticStyle.LIGHT)
     const parsed = parseVerseRef(verseRef)
+    if (!parsed.bookId || !parsed.chapter) return
     if (parsed.verse) {
       navigate(`/bible/${parsed.bookId}/${parsed.chapter}/${parsed.verse}`)
+    } else {
+      // Chapter-level bookmark
+      navigate(`/bible/${parsed.bookId}/${parsed.chapter}`)
     }
   }
 
-  async function handleDeleteNote(id) {
-    const yes = await confirm({
-      title: 'Delete Note',
-      message: 'This note will be permanently deleted.',
-      confirmLabel: 'Delete',
-      destructive: true,
-    })
-    if (yes) {
-      triggerHaptic(HapticStyle.ERROR)
-      removeNote(id)
-    }
-  }
+  function handleDeleteNote(id) { removeNote(id) }
+  function handleDeleteBookmark(id) { removeBookmark(id) }
+  function handleDeleteHighlight(id) { removeHighlight(id) }
 
-  function handleDeleteBookmark(id) {
+  function toggleNotePrivacy(note) {
     triggerHaptic(HapticStyle.LIGHT)
-    removeBookmark(id)
-  }
-
-  function handleDeleteHighlight(id) {
-    triggerHaptic(HapticStyle.LIGHT)
-    removeHighlight(id)
+    updateNote(note.id, { is_public: !note.is_public })
   }
 
   const q = query.trim().toLowerCase()
@@ -109,26 +98,36 @@ function Notes() {
             {filteredNotes.map(note => {
               const parsed = parseVerseRef(note.verse_ref)
               return (
-                <div key={note.id} className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <button
-                      onClick={() => handleVerseNav(note.verse_ref)}
-                      className="text-sm font-bold text-[var(--accent-secondary)] min-h-[auto] min-w-[auto]"
-                    >
-                      {formatVerseRef(parsed.bookId, parsed.chapter, parsed.verse)}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteNote(note.id)}
-                      className="text-xs text-[var(--text-muted)] min-h-[auto] min-w-[auto] p-1"
-                    >
-                      {'✕'}
-                    </button>
+                <SwipeToDelete key={note.id} onDelete={() => handleDeleteNote(note.id)}>
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <button
+                        onClick={() => handleVerseNav(note.verse_ref)}
+                        className="text-sm font-bold text-[var(--accent-secondary)] min-h-[auto] min-w-[auto]"
+                      >
+                        {formatVerseRef(parsed.bookId, parsed.chapter, parsed.verse)}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); toggleNotePrivacy(note) }}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded-full border min-h-[auto] min-w-[auto]"
+                        style={{
+                          color: note.is_public ? 'var(--accent-secondary)' : 'var(--text-muted)',
+                          borderColor: note.is_public ? 'var(--accent-secondary)' : 'var(--border-primary)',
+                          backgroundColor: note.is_public ? 'rgba(0,0,0,0)' : 'var(--bg-surface)',
+                        }}
+                        aria-label={note.is_public ? 'Make private' : 'Make public'}
+                      >
+                        <span>{note.is_public ? '🌍' : '🔒'}</span>
+                        <span>{note.is_public ? 'Public' : 'Private'}</span>
+                      </button>
+                    </div>
+                    <p className="text-sm text-[var(--text-primary)] leading-relaxed mb-2">{note.content}</p>
+                    <p className="text-xs text-[var(--text-muted)]">
+                      {formatTimeAgo(note.updated_at || note.created_at)}
+                    </p>
                   </div>
-                  <p className="text-sm text-[var(--text-primary)] leading-relaxed mb-2">{note.content}</p>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    {formatTimeAgo(note.updated_at || note.created_at)}
-                  </p>
-                </div>
+                </SwipeToDelete>
               )
             })}
           </div>
@@ -158,29 +157,35 @@ function Notes() {
             {sortedHighlights.map(h => {
               const parsed = parseVerseRef(h.verse_ref)
               return (
-                <div
-                  key={h.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[var(--border-primary)]"
-                  style={{ backgroundColor: h.color }}
-                >
-                  <button
-                    onClick={() => handleVerseNav(h.verse_ref)}
-                    className="flex-1 text-left min-h-[auto] min-w-[auto]"
-                  >
-                    <p className="text-sm font-bold text-[var(--accent-secondary)]">
-                      {formatVerseRef(parsed.bookId, parsed.chapter, parsed.verse)}
-                    </p>
-                    {h.verse_text && (
-                      <p className="text-xs text-[var(--text-primary)] mt-1 line-clamp-2">{h.verse_text}</p>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteHighlight(h.id)}
-                    className="text-xs text-[var(--text-muted)] min-h-[auto] min-w-[auto] p-1"
-                  >
-                    {'✕'}
-                  </button>
-                </div>
+                <SwipeToDelete key={h.id} onDelete={() => handleDeleteHighlight(h.id)}>
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-hidden flex">
+                    {/* Vertical color strip showing the highlight color */}
+                    <div className="w-1.5 shrink-0" style={{ backgroundColor: h.color }} />
+                    <button
+                      onClick={() => handleVerseNav(h.verse_ref)}
+                      className="flex-1 text-left min-h-[auto] min-w-[auto] px-4 py-3"
+                    >
+                      <p className="text-sm font-bold text-[var(--accent-secondary)]">
+                        {formatVerseRef(parsed.bookId, parsed.chapter, parsed.verse)}
+                      </p>
+                      {h.verse_text && (
+                        <p
+                          className="text-xs text-[var(--text-primary)] mt-1 line-clamp-2"
+                          style={{
+                            background: `linear-gradient(${h.color}, ${h.color})`,
+                            backgroundSize: '100% 0.5em',
+                            backgroundPosition: '0 88%',
+                            backgroundRepeat: 'no-repeat',
+                            display: 'inline',
+                            padding: '0 2px',
+                          }}
+                        >
+                          {h.verse_text}
+                        </p>
+                      )}
+                    </button>
+                  </div>
+                </SwipeToDelete>
               )
             })}
           </div>
@@ -205,14 +210,11 @@ function Notes() {
             {sortedBookmarks.map(b => {
               const parsed = parseVerseRef(b.verse_ref)
               return (
-                <div
-                  key={b.id}
-                  className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl px-4 py-3"
-                >
-                  <div className="flex items-start justify-between mb-1">
+                <SwipeToDelete key={b.id} onDelete={() => handleDeleteBookmark(b.id)}>
+                  <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl px-4 py-3">
                     <button
                       onClick={() => handleVerseNav(b.verse_ref)}
-                      className="flex-1 text-left min-h-[auto] min-w-[auto]"
+                      className="w-full text-left min-h-[auto] min-w-[auto]"
                     >
                       {b.label && (
                         <p className="text-sm font-bold text-[var(--gold-accent)] mb-1">🔖 {b.label}</p>
@@ -224,14 +226,8 @@ function Notes() {
                         <p className="text-xs text-[var(--text-primary)] mt-1 line-clamp-2 italic">"{b.verse_text}"</p>
                       )}
                     </button>
-                    <button
-                      onClick={() => handleDeleteBookmark(b.id)}
-                      className="text-xs text-[var(--text-muted)] min-h-[auto] min-w-[auto] p-1 ml-2"
-                    >
-                      {'✕'}
-                    </button>
                   </div>
-                </div>
+                </SwipeToDelete>
               )
             })}
           </div>

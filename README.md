@@ -9,7 +9,7 @@ A free, in-depth iOS Bible study app. Cross-references, Greek/Hebrew with Strong
 - React 19 + React Router 7 + Vite 8 + Tailwind 4
 - Capacitor 8 (iOS native shell)
 - Supabase (auth + sync for notes/highlights/bookmarks/prayers/plans)
-- All Bible text bundled offline: WEB, KJV, ASV (public domain only)
+- All Bible text bundled offline: BSB, WEB, KJV, ASV, YLT (public domain only)
 
 ## Getting started
 

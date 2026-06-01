@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../contexts/ThemeContext'
-import { getTranslation, setTranslation, getTranslationName, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
+import { getTranslation, setTranslation, getTranslationName, getTranslationDescription, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
 import { supabase, updateProfile } from '../lib/supabase'
 import { validateUsername, validateDisplayName } from '../lib/moderation'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -390,6 +390,9 @@ function Profile() {
                   <p className="text-xs text-[var(--text-muted)]">
                     {getTranslationName(code)}
                   </p>
+                  <p className="text-[10px] text-[var(--text-muted)] opacity-70">
+                    {getTranslationDescription(code)}
+                  </p>
                 </div>
                 {currentTranslation === code && (
                   <span className="text-[var(--accent-secondary)] text-sm">✓</span>
@@ -455,6 +458,26 @@ function Profile() {
         </div>
         </>
       )}
+
+      <p className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-semibold mb-2 mt-6 px-1">
+        About
+      </p>
+      <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl mb-4 divide-y divide-[var(--border-primary)]">
+        <button
+          onClick={() => { triggerHaptic(HapticStyle.LIGHT); navigate('/privacy') }}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm text-[var(--text-secondary)] active:bg-[var(--bg-surface)]"
+        >
+          <span>Privacy Policy</span>
+          <span className="text-[var(--text-muted)]">›</span>
+        </button>
+        <button
+          onClick={() => { triggerHaptic(HapticStyle.LIGHT); navigate('/support') }}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm text-[var(--text-secondary)] active:bg-[var(--bg-surface)]"
+        >
+          <span>Support &amp; Contact</span>
+          <span className="text-[var(--text-muted)]">›</span>
+        </button>
+      </div>
 
       <p className="text-xs text-[var(--text-muted)] text-center mt-6">
         Bible in Context v{__APP_VERSION__}

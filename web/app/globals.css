@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+/* ============================================
+   DARK THEME (Noah) — medieval black + blood red + parchment
+   ============================================ */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-primary: #0a0a0a;
+  --bg-surface: #111111;
+  --bg-elevated: #1a1a1a;
+  --bg-card: #141414;
+
+  --accent-primary: #8b0000;
+  --accent-secondary: #c41e1e;
+  --accent-light: #e05555;
+  --accent-glow: rgba(139, 0, 0, 0.4);
+
+  --text-primary: #e8dcc8;
+  --text-secondary: #b0a48e;
+  --text-muted: #7a7060;
+
+  --border-primary: #2a2420;
+  --border-subtle: #1e1a16;
+
+  --gold-accent: #c9a84c;
+  --gold-glow: rgba(201, 168, 76, 0.4);
+}
+
+/* ============================================
+   LIGHT THEME (Allie) — pastoral cream + green + gold
+   ============================================ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-primary: #faf8f0;
+  --bg-surface: #f5f0e4;
+  --bg-elevated: #ffffff;
+  --bg-card: #fffef8;
+
+  --accent-primary: #5a7c3a;
+  --accent-secondary: #7ba05b;
+  --accent-light: #a3c47a;
+  --accent-glow: rgba(90, 124, 58, 0.3);
+
+  --text-primary: #2c2417;
+  --text-secondary: #5a4e3c;
+  --text-muted: #8a7e6c;
+
+  --border-primary: #d4c9b0;
+  --border-subtle: #e8dfc8;
+
+  --gold-accent: #b8960c;
+  --gold-glow: rgba(184, 150, 12, 0.3);
+
+  --pink-accent: #d4a0a0;
+}
+
+@theme inline {
+  --color-bg: var(--bg-primary);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-card: var(--bg-card);
+  --color-accent: var(--accent-primary);
+  --color-accent-soft: var(--accent-light);
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-text-secondary: var(--text-secondary);
+  --color-border: var(--border-primary);
+  --color-gold: var(--gold-accent);
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", "EB Garamond", Georgia, serif;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+canvas {
+  touch-action: none;
+}
+
+/* Smooth scroll for anchor jumps */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-primary);
+  color: #fff;
+}
+
+/* Subtle parchment texture for light theme via gradient */
+[data-theme="light"] body {
+  background-image:
+    radial-gradient(at 20% 10%, rgba(184, 150, 12, 0.04) 0%, transparent 50%),
+    radial-gradient(at 80% 90%, rgba(90, 124, 58, 0.05) 0%, transparent 50%);
+}
+
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(at 30% 20%, rgba(139, 0, 0, 0.06) 0%, transparent 55%),
+    radial-gradient(at 70% 80%, rgba(201, 168, 76, 0.04) 0%, transparent 55%);
+}
