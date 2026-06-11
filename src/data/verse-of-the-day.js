@@ -696,7 +696,7 @@ export const VERSES = [
     verse: 1,
     text: 'Behold, how great a love the Father has bestowed on us, that we should be called children of God! For this cause the world doesn\'t know us, because it didn\'t know him.',
     explanation:
-      "Not 'called children for a moment' — children, full stop. Adoption, not orientation. The world will not understand you for the same reason it didn\'t understand Him. This is family resemblance.",
+      "Not 'called children for a moment' — children, full stop. Adoption, not orientation. The world will not understand you for the same reason it didn't understand Him. This is family resemblance.",
     questions: [
       'How does being a child of God shape how you see your worth?',
       'In what ways does the world misread you for following Jesus?',
@@ -1405,7 +1405,7 @@ export const VERSES = [
   },
 ]
 
-if (process.env.NODE_ENV !== 'production') {
+if (import.meta.env.DEV) {
   // Sanity assertions during dev
   const slugs = new Set()
   for (const v of VERSES) {

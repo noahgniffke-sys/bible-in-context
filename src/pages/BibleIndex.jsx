@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { OT_BOOKS, NT_BOOKS, getBookById } from '../lib/bible-books'
 import TabBar from '../components/TabBar'

@@ -145,6 +145,7 @@
 /* ============================================ */
 html {
   color-scheme: var(--color-scheme);
+  overscroll-behavior: none;
 }
 
 body {
@@ -182,6 +183,11 @@ body {
   font-size: 1.05em;
   letter-spacing: 0.005em;
   line-height: 1.65;
+}
+
+/* User-adjustable reader size (A− / A+ controls). */
+.verse-text {
+  font-size: var(--verse-font-size, 1.05em);
 }
 
 /* Display headings (page titles, hero text). */

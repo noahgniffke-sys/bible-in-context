@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import usePlanSync from '../hooks/usePlanSync'
 import { parseVerseRef, formatVerseRef } from '../lib/bible-books'
@@ -11,7 +10,6 @@ import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 function PlanDetail() {
   const { planId } = useParams()
-  const { user } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
 

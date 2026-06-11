@@ -12,7 +12,7 @@ import TabBar from '../components/TabBar'
 import VerifiedBadge from '../components/VerifiedBadge'
 import { useConfirm } from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
-import { blockUser, reportContent } from '../lib/social-moderation'
+import { blockUser, unblockUser, isUserBlocked, reportContent } from '../lib/social-moderation'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 const PROFILE_TABS = [
@@ -34,6 +34,7 @@ function PublicProfile() {
   const [error, setError] = useState(null)
   const [tab, setTab] = useState('highlights')
   const [initialFollowing, setInitialFollowing] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(false)
 
   const { isFollowing, toggle: toggleFollow, loading: followLoading } = useFollowToggle(
     profile?.id,
@@ -77,6 +78,15 @@ function PublicProfile() {
       const profileData = profileRows?.[0]
       if (!profileData) throw new Error('Profile not found')
       setProfile(profileData)
+
+      // Blocked users get a placeholder card — don't load their content.
+      if (user && profileData.id !== user.id) {
+        const blocked = await isUserBlocked(profileData.id)
+        setIsBlocked(blocked)
+        if (blocked) return
+      } else {
+        setIsBlocked(false)
+      }
 
       // Check if following (avoid .single() — hangs in this project)
       if (user && profileData.id !== user.id) {
@@ -125,7 +135,17 @@ function PublicProfile() {
     const { error } = await blockUser(profile.id)
     if (error) { toast.error('Could not block user'); return }
     toast.info(`@${profile.username} blocked`)
-    navigate(-1)
+    setIsBlocked(true)
+  }
+
+  async function handleUnblock() {
+    if (!profile) return
+    triggerHaptic(HapticStyle.LIGHT)
+    const { error } = await unblockUser(profile.id)
+    if (error) { toast.error('Could not unblock user'); return }
+    toast.success(`@${profile.username} unblocked`)
+    setIsBlocked(false)
+    loadProfile()
   }
 
   async function handleReport() {
@@ -170,6 +190,27 @@ function PublicProfile() {
   }
 
   const isOwnProfile = user?.id === profile.id
+
+  if (isBlocked) {
+    return (
+      <div className="p-4">
+        <BackButton />
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-6 mt-4 text-center">
+          <div className="w-16 h-16 rounded-full bg-[var(--bg-surface)] border-2 border-dashed border-[var(--border-primary)] flex items-center justify-center text-[var(--text-muted)] text-2xl font-bold mx-auto mb-3">
+            {(profile.display_name || profile.username || '?')[0].toUpperCase()}
+          </div>
+          <p className="text-sm text-[var(--text-muted)]">@{profile.username}</p>
+          <p className="text-base font-medium text-[var(--text-primary)] mt-2">You've blocked this user</p>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            Their highlights and notes are hidden, and they won't appear in your feed or search.
+          </p>
+          <button onClick={handleUnblock} className="themed-btn mt-4 px-6 py-2 text-sm">
+            Unblock
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4">

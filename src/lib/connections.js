@@ -44,9 +44,8 @@ const BIBLICAL_SYMBOLS = [
     connection: 'Covenants are binding agreements that structure God\'s relationship with humanity. God made covenants with Noah (Genesis 9:8-17), Abraham (Genesis 15), Moses/Israel (Exodus 19-24), and David (2 Samuel 7). Jesus established the New Covenant through His blood (Luke 22:20, Hebrews 8:6-13), fulfilling and surpassing all previous covenants. God is always faithful to His covenant promises.' },
 ]
 
-export function getBiblicalConnections(verseText, bookId, chapter, verse) {
+export function getBiblicalConnections(verseText) {
   if (!verseText) return []
-  const v = verseText.toLowerCase()
   const connections = []
 
   // Check for number patterns

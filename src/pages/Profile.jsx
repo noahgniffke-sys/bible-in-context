@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../contexts/ThemeContext'
 import { getTranslation, setTranslation, getTranslationName, getTranslationDescription, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
-import { supabase, updateProfile } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 import { validateUsername, validateDisplayName } from '../lib/moderation'
+import { getBlockedUserIds, unblockUser } from '../lib/social-moderation'
 import ToggleSwitch from '../components/ToggleSwitch'
 import VerifiedBadge from '../components/VerifiedBadge'
 import { useConfirm } from '../components/ConfirmDialog'
@@ -23,6 +24,9 @@ function Profile() {
   const [editValue, setEditValue] = useState('')
   const [editError, setEditError] = useState(null)
   const [editSaving, setEditSaving] = useState(false)
+  const [showBlockedUsers, setShowBlockedUsers] = useState(false)
+  const [blockedUsers, setBlockedUsers] = useState(null) // null = not yet loaded
+  const [blockedLoading, setBlockedLoading] = useState(false)
 
   function openEdit(field) {
     setEditing(field)
@@ -71,6 +75,34 @@ function Profile() {
     setShowTranslationPicker(false)
     triggerHaptic(HapticStyle.LIGHT)
     toast.info(`Switched to ${getTranslationName(code)}`)
+  }
+
+  async function toggleBlockedUsers() {
+    triggerHaptic(HapticStyle.LIGHT)
+    const next = !showBlockedUsers
+    setShowBlockedUsers(next)
+    if (next && blockedUsers === null) {
+      setBlockedLoading(true)
+      try {
+        const ids = await getBlockedUserIds()
+        if (!ids.length) { setBlockedUsers([]); return }
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, username, display_name')
+          .in('id', ids)
+        setBlockedUsers(data || [])
+      } finally {
+        setBlockedLoading(false)
+      }
+    }
+  }
+
+  async function handleUnblock(blocked) {
+    triggerHaptic(HapticStyle.LIGHT)
+    const { error } = await unblockUser(blocked.id)
+    if (error) { toast.error('Could not unblock user'); return }
+    toast.success(`@${blocked.username} unblocked`)
+    setBlockedUsers(prev => (prev || []).filter(u => u.id !== blocked.id))
   }
 
   async function handleDeleteAccount() {
@@ -402,6 +434,54 @@ function Profile() {
           </div>
         )}
       </div>
+
+      {/* Blocked users */}
+      {user && (
+        <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-hidden mb-4">
+          <div
+            role="button"
+            onClick={toggleBlockedUsers}
+            className="flex items-center justify-between px-4 py-4 cursor-pointer"
+            style={{ minHeight: 'auto', minWidth: 'auto' }}
+          >
+            <div>
+              <p className="font-medium text-[var(--text-primary)]">Blocked Users</p>
+              <p className="text-sm text-[var(--text-muted)]">Manage who you've blocked</p>
+            </div>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              className={`w-5 h-5 text-[var(--text-muted)] transition-transform ${showBlockedUsers ? 'rotate-180' : ''}`}
+            >
+              <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
+          {showBlockedUsers && (
+            <div className="border-t border-[var(--border-primary)] fade-in-up">
+              {blockedLoading ? (
+                <p className="text-sm text-[var(--text-muted)] px-4 py-3">Loading...</p>
+              ) : (blockedUsers || []).length === 0 ? (
+                <p className="text-sm text-[var(--text-muted)] px-4 py-3">You haven't blocked anyone.</p>
+              ) : (
+                blockedUsers.map(b => (
+                  <div key={b.id} className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)] last:border-b-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-[var(--text-primary)] truncate">{b.display_name || b.username}</p>
+                      <p className="text-xs text-[var(--text-muted)] truncate">@{b.username}</p>
+                    </div>
+                    <button
+                      onClick={() => handleUnblock(b)}
+                      className="text-xs text-[var(--accent-secondary)] font-medium border border-[var(--border-primary)] rounded-full px-3 py-1.5 min-h-[auto] min-w-[auto] active:scale-95"
+                    >
+                      Unblock
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Social */}
       {user && (

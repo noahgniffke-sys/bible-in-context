@@ -124,6 +124,7 @@ function PrayerJournal() {
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            maxLength={2000}
             placeholder="Write your prayer..."
             className="w-full bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-[var(--text-primary)] text-sm resize-none min-h-[100px] mb-2 focus:outline-none focus:border-[var(--accent-secondary)]"
           />

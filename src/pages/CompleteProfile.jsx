@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { checkUsernameAvailable, updateProfile } from '../lib/supabase'
 import { validateUsername } from '../lib/moderation'
@@ -8,8 +7,7 @@ import { useToast } from '../components/Toast'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 function CompleteProfile() {
-  const { user, profile, refreshProfile } = useAuth()
-  const navigate = useNavigate()
+  const { user, refreshProfile } = useAuth()
   const toast = useToast()
 
   const [username, setUsername] = useState('')

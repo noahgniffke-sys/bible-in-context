@@ -47,9 +47,9 @@ function Notes() {
   }
 
   const q = query.trim().toLowerCase()
-  const matchesQuery = (text) => !q || (text || '').toLowerCase().includes(q)
 
   const filteredNotes = useMemo(() => {
+    const matchesQuery = (text) => !q || (text || '').toLowerCase().includes(q)
     return notes
       .filter(n => matchesQuery(n.content) || matchesQuery(n.verse_ref) || matchesQuery(n.verse_text))
       .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at))

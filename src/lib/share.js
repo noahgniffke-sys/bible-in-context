@@ -1,10 +1,24 @@
 import { formatVerseRef } from './bible-books'
 import { getTranslation } from './bible-api'
 
-export async function shareVerse(bookId, chapter, verse, text) {
+export function buildVerseShareText(bookId, chapter, verse, text) {
   const ref = formatVerseRef(bookId, chapter, verse)
   const translation = getTranslation()
-  const shareText = `"${text}"\n\n— ${ref} (${translation})\n\nShared via Bible in Context`
+  return { ref, shareText: `"${text}"\n\n— ${ref} (${translation})\n\nShared via Bible in Context` }
+}
+
+export async function copyVerse(bookId, chapter, verse, text) {
+  const { shareText } = buildVerseShareText(bookId, chapter, verse, text)
+  try {
+    await navigator.clipboard.writeText(shareText)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export async function shareVerse(bookId, chapter, verse, text) {
+  const { ref, shareText } = buildVerseShareText(bookId, chapter, verse, text)
 
   try {
     const { Share } = await import('@capacitor/share')

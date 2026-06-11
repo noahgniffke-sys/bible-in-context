@@ -1,5 +1,5 @@
 // Bible text — fully bundled, no API needed
-// BSB, KJV, WEB, ASV, YLT — all public domain
+// BSB, KJV, WEB, ASV, YLT, AKJV, NHEB, DBY, GNV — all public domain
 // Data loaded per-book via dynamic import for fast initial load
 
 const bookCache = {}
@@ -12,6 +12,10 @@ const COPYRIGHT = {
   WEB: 'World English Bible — Public Domain',
   ASV: 'American Standard Version — Public Domain',
   YLT: "Young's Literal Translation (1898) — Public Domain",
+  AKJV: 'American King James Version — Public Domain',
+  NHEB: 'New Heart English Bible — Public Domain',
+  DBY: 'Darby Translation (1889) — Public Domain',
+  GNV: 'Geneva Bible (1599) — Public Domain',
 }
 
 const TRANSLATION_NAMES = {
@@ -20,6 +24,10 @@ const TRANSLATION_NAMES = {
   WEB: 'World English Bible',
   ASV: 'American Standard Version',
   YLT: "Young's Literal Translation",
+  AKJV: 'American King James Version',
+  NHEB: 'New Heart English Bible',
+  DBY: 'Darby Translation',
+  GNV: 'Geneva Bible',
 }
 
 // One-line descriptors shown in the translation picker to help users choose.
@@ -29,9 +37,13 @@ const TRANSLATION_DESC = {
   KJV: 'Classic, 1611',
   ASV: 'Formal, 1901',
   YLT: 'Ultra-literal, 1898',
+  AKJV: 'KJV in modern spelling',
+  NHEB: 'Modern, readable',
+  DBY: 'Literal, 1889',
+  GNV: 'Reformation classic, 1599',
 }
 
-export const AVAILABLE_TRANSLATIONS = ['BSB', 'WEB', 'KJV', 'ASV', 'YLT']
+export const AVAILABLE_TRANSLATIONS = ['BSB', 'WEB', 'KJV', 'ASV', 'YLT', 'AKJV', 'NHEB', 'DBY', 'GNV']
 
 async function loadBook(bookId, translation) {
   const key = `${translation}_${bookId}`
@@ -48,6 +60,14 @@ async function loadBook(bookId, translation) {
       module = await import(`../data/bible/asv/${id}.json`)
     } else if (translation === 'YLT') {
       module = await import(`../data/bible/ylt/${id}.json`)
+    } else if (translation === 'AKJV') {
+      module = await import(`../data/bible/akjv/${id}.json`)
+    } else if (translation === 'NHEB') {
+      module = await import(`../data/bible/nheb/${id}.json`)
+    } else if (translation === 'DBY') {
+      module = await import(`../data/bible/dby/${id}.json`)
+    } else if (translation === 'GNV') {
+      module = await import(`../data/bible/gnv/${id}.json`)
     } else {
       module = await import(`../data/bible/kjv/${id}.json`)
     }

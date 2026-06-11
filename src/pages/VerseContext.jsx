@@ -8,7 +8,7 @@ import { getStudyNote } from '../lib/study'
 import { getJFBCommentary } from '../lib/jfb'
 import { getStrongsForVerse, getLanguageForBook, adaptWordsToTranslation, generatePhraseByPhrase, detectVerseType, generatePlainEnglish, getEtymologyBreakdown } from '../lib/strongs'
 import { getCommentary } from '../lib/commentary'
-import { shareVerse } from '../lib/share'
+import { shareVerse, copyVerse } from '../lib/share'
 import { getBiblicalConnections } from '../lib/connections'
 import { validateText } from '../lib/moderation'
 import BackButton from '../components/BackButton'
@@ -59,6 +59,7 @@ function VerseContext() {
   // Skip while the editor is open so we don't clobber user input.
   useEffect(() => {
     if (showNoteEditor) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional sync of editor state from external note data; guarded by showNoteEditor
     setNoteText(existingNote?.content || '')
     setNoteIsPublic(existingNote?.is_public ?? false)
   }, [verseRef, existingNote?.content, existingNote?.is_public, showNoteEditor])
@@ -330,9 +331,25 @@ function VerseContext() {
           <button
             onClick={async () => {
               triggerHaptic(HapticStyle.LIGHT)
+              const ok = await copyVerse(bookId, chapterNum, verseNum, verseData?.text || '')
+              if (ok) toast.success('Copied to clipboard')
+              else toast.error('Could not copy')
+            }}
+            aria-label="Copy verse"
+            className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="var(--text-muted)" strokeWidth="2">
+              <rect x="9" y="9" width="12" height="12" rx="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <button
+            onClick={async () => {
+              triggerHaptic(HapticStyle.LIGHT)
               const result = await shareVerse(bookId, chapterNum, verseNum, verseData?.text || '')
               if (result === 'copied') toast.success('Copied to clipboard')
             }}
+            aria-label="Share verse"
             className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="var(--text-muted)" strokeWidth="2">
@@ -343,6 +360,7 @@ function VerseContext() {
           </button>
           <button
             onClick={openBookmarkModal}
+            aria-label={isBookmarked ? 'Edit bookmark' : 'Bookmark verse'}
             className="p-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5" fill={isBookmarked ? 'var(--gold-accent)' : 'none'} stroke={isBookmarked ? 'var(--gold-accent)' : 'var(--text-muted)'} strokeWidth="2">
@@ -404,7 +422,7 @@ function VerseContext() {
         {loading ? (
           <div className="h-16 shimmer rounded" />
         ) : verseData ? (
-          <p className="text-[var(--text-primary)] text-lg leading-relaxed verse-text">
+          <p className="text-[var(--text-primary)] leading-relaxed verse-text">
             {verseData.text}
           </p>
         ) : (
@@ -453,6 +471,7 @@ function VerseContext() {
           <button
             key={c.name}
             onClick={() => handleHighlight(c.value)}
+            aria-label={`Highlight ${c.name.toLowerCase()}`}
             className="w-8 h-8 rounded-full border-2 border-[var(--border-primary)] flex-shrink-0 active:scale-90"
             style={{ backgroundColor: c.value }}
             title={c.name}
@@ -484,6 +503,7 @@ function VerseContext() {
           <textarea
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
+            maxLength={2000}
             placeholder="Write your note about this verse..."
             className="w-full bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-lg p-3 text-[var(--text-primary)] text-sm resize-none min-h-[100px] focus:outline-none focus:border-[var(--accent-secondary)]"
           />
@@ -783,6 +803,7 @@ function VerseContext() {
                         <span className="text-lg font-bold text-[var(--text-primary)]">{w.originalWord}</span>
                         <button
                           onClick={(e) => { e.stopPropagation(); setWordPopup(null) }}
+                          aria-label="Close word details"
                           className="text-xs text-[var(--text-muted)] min-h-[auto] min-w-[auto] p-1 ml-2">✕</button>
                       </div>
                       {w.englishWord && (

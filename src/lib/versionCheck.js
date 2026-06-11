@@ -1,9 +1,8 @@
 import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 
-// TODO: Fill in the numeric App Store ID for Bible in Context.
-// You can find it in App Store Connect → My Apps → Bible in Context → App Information → Apple ID.
-const APPLE_APP_ID = '0000000000'
+// Numeric App Store ID for Bible in Context (App Store Connect → App Information → Apple ID).
+const APPLE_APP_ID = '6771509556'
 const APP_STORE_URL = `https://apps.apple.com/us/app/bible-in-context/id${APPLE_APP_ID}`
 const ITUNES_LOOKUP = `https://itunes.apple.com/lookup?id=${APPLE_APP_ID}&country=us`
 

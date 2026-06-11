@@ -9,6 +9,10 @@ import ScrollToTop from './components/ScrollToTop'
 import Layout from './components/Layout'
 import UpdateAvailableModal, { wasDismissed } from './components/UpdateAvailableModal'
 import { checkForUpdate } from './lib/versionCheck'
+import { applyVerseFontSize, getSavedFontSizeIndex } from './lib/fontSize'
+
+// Apply the saved reader font size before first paint
+applyVerseFontSize(getSavedFontSizeIndex())
 
 // Pages
 import Home from './pages/Home'

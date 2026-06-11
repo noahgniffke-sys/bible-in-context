@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getBookById, formatChapterRef } from '../lib/bible-books'
 import { expandBookNames } from '../lib/utils'
@@ -11,6 +11,8 @@ import ErrorBanner from '../components/ErrorBanner'
 import { useToast } from '../components/Toast'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 import useUserData from '../hooks/useUserData'
+import useLocalStorage from '../hooks/useLocalStorage'
+import { VERSE_FONT_SIZES, DEFAULT_FONT_SIZE_INDEX, clampFontSizeIndex, applyVerseFontSize } from '../lib/fontSize'
 
 function ChapterView() {
   const { bookId, chapter } = useParams()
@@ -29,6 +31,19 @@ function ChapterView() {
   const [showCommentary, setShowCommentary] = useState(false)
   const [verseCommentaries, setVerseCommentaries] = useState({})
   const [showTranslationPicker, setShowTranslationPicker] = useState(false)
+  const [fontSizeIdx, setFontSizeIdx] = useLocalStorage('bic_font_size', DEFAULT_FONT_SIZE_INDEX)
+
+  // Ref mirror so fetchChapter can read the toggle without depending on it
+  // (a dep would refetch the whole chapter every time commentary is toggled).
+  const showCommentaryRef = useRef(showCommentary)
+  useEffect(() => { showCommentaryRef.current = showCommentary }, [showCommentary])
+
+  useEffect(() => { applyVerseFontSize(fontSizeIdx) }, [fontSizeIdx])
+
+  function changeFontSize(delta) {
+    triggerHaptic(HapticStyle.LIGHT)
+    setFontSizeIdx(clampFontSizeIndex(fontSizeIdx + delta))
+  }
 
   // Multi-select state
   const [selectedVerses, setSelectedVerses] = useState(new Set())
@@ -82,7 +97,7 @@ function ChapterView() {
       localStorage.removeItem('bic_last_verse')
 
       // Auto-load commentary if toggle was on
-      if (showCommentary) {
+      if (showCommentaryRef.current) {
         loadCommentaries(data.verses || [])
       }
     } catch (err) {
@@ -96,6 +111,38 @@ function ChapterView() {
   useEffect(() => {
     fetchChapter()
   }, [fetchChapter])
+
+  // Remember scroll position per chapter so reopening the app resumes mid-chapter.
+  useEffect(() => {
+    if (loading) return
+    let ticking = false
+    const onScroll = () => {
+      if (ticking) return
+      ticking = true
+      requestAnimationFrame(() => {
+        ticking = false
+        try {
+          localStorage.setItem('bic_scroll', JSON.stringify({ ref: chapterRef, y: window.scrollY }))
+        } catch {}
+      })
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [loading, chapterRef])
+
+  // Restore saved position once per chapter, after verses render (so the page
+  // has its full height). Runs after ScrollToTop, so this restore wins.
+  const restoredChapterRef = useRef(null)
+  useEffect(() => {
+    if (loading || restoredChapterRef.current === chapterRef) return
+    restoredChapterRef.current = chapterRef
+    try {
+      const saved = JSON.parse(localStorage.getItem('bic_scroll') || 'null')
+      if (saved?.ref === chapterRef && saved.y > 0) {
+        requestAnimationFrame(() => window.scrollTo(0, saved.y))
+      }
+    } catch {}
+  }, [loading, chapterRef])
 
   async function loadCommentaries(verseList) {
     const commentaries = {}
@@ -230,10 +277,33 @@ function ChapterView() {
       <div className="flex items-center justify-between mb-2">
         <BackButton label={book.name} to="/bible" />
 
+        <div className="flex items-center gap-2">
+        {/* Font size stepper */}
+        <div className="flex items-center bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-full overflow-hidden">
+          <button
+            onClick={() => changeFontSize(-1)}
+            disabled={fontSizeIdx <= 0}
+            aria-label="Decrease text size"
+            className="px-2.5 py-1.5 text-xs font-semibold text-[var(--text-primary)] disabled:opacity-40 min-h-[auto] min-w-[auto]"
+          >
+            A−
+          </button>
+          <div className="w-px h-4 bg-[var(--border-primary)]" />
+          <button
+            onClick={() => changeFontSize(1)}
+            disabled={fontSizeIdx >= VERSE_FONT_SIZES.length - 1}
+            aria-label="Increase text size"
+            className="px-2.5 py-1.5 text-sm font-semibold text-[var(--text-primary)] disabled:opacity-40 min-h-[auto] min-w-[auto]"
+          >
+            A+
+          </button>
+        </div>
+
         {/* Translation dropdown */}
         <div className="relative">
           <button
             onClick={() => { setShowTranslationPicker(!showTranslationPicker); triggerHaptic(HapticStyle.LIGHT) }}
+            aria-label="Choose translation"
             className="text-sm text-[var(--text-primary)] bg-[var(--bg-surface)] border border-[var(--border-primary)] px-3 py-1.5 rounded-full flex items-center gap-1"
           >
             {currentTranslation}
@@ -242,7 +312,7 @@ function ChapterView() {
             </svg>
           </button>
           {showTranslationPicker && (
-            <div className="absolute right-0 top-full mt-1 bg-[var(--bg-elevated)] border border-[var(--border-primary)] rounded-lg shadow-lg z-50 overflow-hidden min-w-[180px] fade-in-up">
+            <div className="absolute right-0 top-full mt-1 bg-[var(--bg-elevated)] border border-[var(--border-primary)] rounded-lg shadow-lg z-50 overflow-y-auto max-h-[60vh] min-w-[180px] fade-in-up">
               {AVAILABLE_TRANSLATIONS.map(code => (
                 <button
                   key={code}
@@ -262,12 +332,14 @@ function ChapterView() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
       {/* Chapter title + nav */}
       <div className="flex items-center justify-between mb-3">
         {hasPrev ? (
           <Link to={`/bible/${bookId}/${chapterNum - 1}`} onClick={() => triggerHaptic(HapticStyle.LIGHT)}
+            aria-label="Previous chapter"
             className="text-[var(--accent-secondary)] text-sm font-medium flex items-center gap-1 min-h-[auto] min-w-[auto]">
             <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4"><path d="M15 19L8 12L15 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </Link>
@@ -295,11 +367,19 @@ function ChapterView() {
         </div>
         {hasNext ? (
           <Link to={`/bible/${bookId}/${chapterNum + 1}`} onClick={() => triggerHaptic(HapticStyle.LIGHT)}
+            aria-label="Next chapter"
             className="text-[var(--accent-secondary)] text-sm font-medium flex items-center gap-1 min-h-[auto] min-w-[auto]">
             <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4"><path d="M9 5L16 12L9 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </Link>
         ) : <div className="w-6" />}
       </div>
+
+      {/* Verse count */}
+      {!loading && verses.length > 0 && (
+        <p className="text-xs text-[var(--text-muted)] text-center -mt-1 mb-3">
+          {verses.length} verse{verses.length !== 1 ? 's' : ''}
+        </p>
+      )}
 
       {/* Chapter Summary */}
       {chapterSummary && (
@@ -364,6 +444,7 @@ function ChapterView() {
           <div className="flex gap-2 items-center">
             {HIGHLIGHT_COLORS.map(c => (
               <button key={c.name} onClick={() => applyHighlightToSelected(c.value)}
+                aria-label={`Highlight ${c.name.toLowerCase()}`}
                 className="w-8 h-8 rounded-full border-2 border-[var(--border-primary)] flex-shrink-0 active:scale-90"
                 style={{ backgroundColor: c.value }} title={c.name} />
             ))}
@@ -421,7 +502,7 @@ function ChapterView() {
                     <span className="text-xs font-bold text-[var(--accent-secondary)] mr-1.5 align-super">
                       {verse.number}
                     </span>
-                    <span className="text-[var(--text-primary)] text-[15px] leading-relaxed verse-text">
+                    <span className="text-[var(--text-primary)] leading-relaxed verse-text">
                       {verse.text}
                     </span>
                     {noteExists && (
