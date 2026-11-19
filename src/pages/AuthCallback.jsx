@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, getProfile, createProfile } from '../lib/supabase'
+import CrossMark from '../components/CrossMark'
 
 function AuthCallback() {
   const navigate = useNavigate()
@@ -114,7 +115,9 @@ function AuthCallback() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center">
       <div className="text-center">
-        <div className="text-4xl mb-4">{'✞'}</div>
+        <div className="mb-4 inline-flex text-[var(--gold-accent)]">
+          <CrossMark size={40} />
+        </div>
         <p className="text-[var(--text-secondary)]">Signing you in...</p>
       </div>
     </div>

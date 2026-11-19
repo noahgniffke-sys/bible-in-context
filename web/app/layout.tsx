@@ -19,7 +19,7 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "Bible in Context — The Word, in its full meaning",
   description:
-    "A Bible study app built so the Word of God is actually understood in its true context. Cross-references, original Greek and Hebrew, and verse-by-verse meaning. Free forever.",
+    "Bible study with cross-references, Greek and Hebrew, and a daily verse in the translation you use. Free, offline, and built on Scripture.",
 };
 
 export const viewport: Viewport = {

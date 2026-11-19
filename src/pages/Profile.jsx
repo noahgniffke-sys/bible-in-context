@@ -1,20 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useTheme } from '../contexts/ThemeContext'
+import ThemePicker from '../components/ThemePicker'
+import FontPicker from '../components/FontPicker'
 import { getTranslation, setTranslation, getTranslationName, getTranslationDescription, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
 import { supabase } from '../lib/supabase'
 import { validateUsername, validateDisplayName } from '../lib/moderation'
 import { getBlockedUserIds, unblockUser } from '../lib/social-moderation'
-import ToggleSwitch from '../components/ToggleSwitch'
 import VerifiedBadge from '../components/VerifiedBadge'
+import CrossMark from '../components/CrossMark'
 import { useConfirm } from '../components/ConfirmDialog'
 import { useToast } from '../components/Toast'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 function Profile() {
   const { user, profile, signOut, refreshProfile } = useAuth()
-  const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const confirm = useConfirm()
   const toast = useToast()
@@ -196,26 +196,42 @@ function Profile() {
             </p>
 
             <div className="flex items-center gap-6 mt-4">
-              <div className="text-center">
+              <button
+                type="button"
+                disabled={!profile?.username}
+                onClick={() => {
+                  triggerHaptic(HapticStyle.LIGHT)
+                  navigate(`/u/${profile.username}/followers`)
+                }}
+                className="text-center min-h-[44px] px-2 active:scale-95 disabled:opacity-60"
+              >
                 <p className="text-lg font-bold text-[var(--text-primary)]">
                   {profile?.followers_count || 0}
                 </p>
                 <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
                   Followers
                 </p>
-              </div>
+              </button>
               <div
                 className="w-px h-8"
                 style={{ background: 'var(--border-primary)' }}
               />
-              <div className="text-center">
+              <button
+                type="button"
+                disabled={!profile?.username}
+                onClick={() => {
+                  triggerHaptic(HapticStyle.LIGHT)
+                  navigate(`/u/${profile.username}/following`)
+                }}
+                className="text-center min-h-[44px] px-2 active:scale-95 disabled:opacity-60"
+              >
                 <p className="text-lg font-bold text-[var(--text-primary)]">
                   {profile?.following_count || 0}
                 </p>
                 <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
                   Following
                 </p>
-              </div>
+              </button>
             </div>
 
             {profile?.username && (
@@ -254,7 +270,7 @@ function Profile() {
                 color: 'var(--text-muted)',
               }}
             >
-              ✞
+              <CrossMark size={36} />
             </div>
             <h1 className="display mt-4 text-3xl text-[var(--text-primary)]">
               Your Profile
@@ -375,15 +391,8 @@ function Profile() {
         Settings
       </p>
 
-      {/* Theme */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 mb-4">
-        <ToggleSwitch
-          label={theme === 'dark' ? 'Noah Theme (Dark)' : 'Allie Theme (Light)'}
-          description="Switch between dark and light mode"
-          value={theme === 'light'}
-          onChange={toggleTheme}
-        />
-      </div>
+      <ThemePicker className="mb-4" />
+      <FontPicker className="mb-4" />
 
       {/* Translation */}
       <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl overflow-hidden mb-4">

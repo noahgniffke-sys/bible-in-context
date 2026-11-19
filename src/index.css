@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   BIBLE IN CONTEXT — DUAL-THEME DESIGN SYSTEM (v2)
-   Dark mode  = medieval scripture / gothic cathedral / forged steel
-   Light mode = illuminated manuscript / royal storybook / heavenly garden
-   Same layout & component sizing across both — atmosphere does the work.
+   BIBLE IN CONTEXT — THEME SYSTEM
+   Dark (Noah), light (Allie), Japan, Wedding, Blue Night, and Nathan.
+   Same layout across all of them. Color does the work.
    ========================================================================== */
 
 /* ----------------------------------- DARK THEME --------------------------- */
@@ -50,9 +49,9 @@
   --scrollbar-hover: #8b0000;
 
   /* Typography */
-  --font-display: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
-  --font-body:    'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  --font-ui:      -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body:    'Source Serif 4', Georgia, serif;
+  --font-ui:      'Source Sans 3', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
   /* Atmospheric textures: very subtle grain + radial vignette */
   --bg-texture:
@@ -70,6 +69,8 @@
   --btn-border:    1px solid #3a2422;
   --btn-shadow:    0 1px 0 rgba(255, 220, 200, 0.06) inset, 0 6px 14px rgba(0, 0, 0, 0.5);
   --btn-text:      var(--text-primary);
+  --btn-primary-text: #fff;
+  --on-gold: #1a1208;
 
   --color-scheme: dark;
 }
@@ -118,8 +119,8 @@
   --scrollbar-thumb: #d4c9b0;
   --scrollbar-hover: #5a7c3a;
 
-  --font-display: 'Playfair Display', 'Cormorant Garamond', Georgia, serif;
-  --font-body:    'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body:    'Source Serif 4', Georgia, serif;
   --font-ui:      -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
 
   /* Atmosphere: soft radial wash + warm pink + cream paper noise */
@@ -136,8 +137,250 @@
   --btn-border:    1px solid var(--border-primary);
   --btn-shadow:    0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 4px 10px rgba(100, 80, 30, 0.08);
   --btn-text:      var(--text-primary);
+  --btn-primary-text: #fff;
+  --on-gold: #1a1208;
 
   --color-scheme: light;
+}
+
+/* ----------------------------------- JAPAN -------------------------------- */
+/* Aged washi cream, sumi black, and vermillion. A light theme. */
+[data-theme="japan"] {
+  --bg-primary:   #f3e7d3;
+  --bg-surface:   #e8d9c2;
+  --bg-elevated:  #f8f1e4;
+  --bg-card:      #f7f0e2;
+
+  --accent-primary:   #7d1c1c;
+  --accent-secondary: #a42822;
+  --accent-light:     #d4543c;
+  --accent-glow:      rgba(164, 40, 34, 0.30);
+
+  --text-primary:   #1a1411;
+  --text-secondary: #4e4038;
+  --text-muted:     #7d6b60;
+
+  --border-primary: #d2c0a8;
+  --border-subtle:  #e4d5c2;
+
+  --gold-accent: #8f2d28;
+  --gold-glow:   rgba(143, 45, 40, 0.28);
+
+  --highlight-red:    rgba(164, 40, 34, 0.28);
+  --highlight-orange: rgba(176, 98, 42, 0.30);
+  --highlight-yellow: rgba(186, 146, 64, 0.34);
+  --highlight-green:  rgba(70, 110, 72, 0.26);
+  --highlight-blue:   rgba(58, 92, 122, 0.24);
+  --highlight-purple: rgba(110, 62, 84, 0.24);
+
+  --accent-error:   #a32020;
+  --accent-success: #3f6b45;
+  --accent-warning: #a56a28;
+
+  --scrollbar-thumb: #d2c0a8;
+  --scrollbar-hover: #a42822;
+
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body:    'Source Serif 4', Georgia, serif;
+  --font-ui:      -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+
+  --bg-texture:
+    radial-gradient(ellipse at top right, rgba(164, 40, 34, 0.12) 0%, transparent 46%),
+    radial-gradient(ellipse at bottom left, rgba(90, 58, 28, 0.12) 0%, transparent 58%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.42  0 0 0 0 0.26  0 0 0 0 0.10  0 0 0 0.10 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  --card-sheen: linear-gradient(140deg, rgba(255, 248, 236, 0.8) 0%, rgba(243, 231, 211, 0) 55%);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset, 0 6px 16px rgba(70, 42, 24, 0.10);
+
+  --btn-bg:        linear-gradient(180deg, #fbf6ec 0%, #e8d9c2 100%);
+  --btn-bg-hover:  linear-gradient(180deg, #fffaf2 0%, #deccb0 100%);
+  --btn-border:    1px solid #cbb8a0;
+  --btn-shadow:    0 1px 0 rgba(255, 255, 255, 0.85) inset, 0 4px 10px rgba(70, 42, 24, 0.08);
+  --btn-text:      var(--text-primary);
+  --btn-primary-text: #fff;
+  --on-gold: #fffaf6;
+
+  --color-scheme: light;
+}
+
+/* ----------------------------------- WEDDING ------------------------------ */
+/* White paper with baby blue and baby yellow. A light theme. */
+[data-theme="wedding"] {
+  --bg-primary:   #f4f8fb;
+  --bg-surface:   #e7f3fa;
+  --bg-elevated:  #ffffff;
+  --bg-card:      #ffffff;
+
+  --accent-primary:   #266480;
+  --accent-secondary: #2a6d8c;
+  --accent-light:     #d7ebf5;
+  --accent-glow:      rgba(42, 109, 140, 0.28);
+
+  --text-primary:   #2c3a46;
+  --text-secondary: #5c6d7a;
+  --text-muted:     #4d6472;
+
+  --border-primary: #d5e6f0;
+  --border-subtle:  #eaf3f8;
+
+  --gold-accent: #7a5c12;
+  --gold-glow:   rgba(122, 92, 18, 0.28);
+
+  --highlight-red:    rgba(232, 160, 170, 0.40);
+  --highlight-orange: rgba(236, 196, 140, 0.42);
+  --highlight-yellow: rgba(245, 224, 140, 0.55);
+  --highlight-green:  rgba(160, 210, 176, 0.42);
+  --highlight-blue:   rgba(169, 212, 234, 0.55);
+  --highlight-purple: rgba(198, 176, 220, 0.40);
+
+  --accent-error:   #c05656;
+  --accent-success: #5d9a6a;
+  --accent-warning: #c6a04a;
+
+  --scrollbar-thumb: #d5e6f0;
+  --scrollbar-hover: #2a6d8c;
+
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body:    'Source Serif 4', Georgia, serif;
+  --font-ui:      -apple-system, BlinkMacSystemFont, system-ui, 'Segoe UI', sans-serif;
+
+  --bg-texture:
+    radial-gradient(ellipse at 50% 16%, rgba(186, 222, 240, 0.95) 0%, transparent 42%),
+    radial-gradient(ellipse at 50% 92%, rgba(247, 226, 150, 0.82) 0%, transparent 40%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.70  0 0 0 0 0.85  0 0 0 0.035 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  --card-sheen: linear-gradient(140deg, rgba(255, 255, 255, 0.9) 0%, rgba(232, 244, 250, 0.35) 60%);
+  --card-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 6px 16px rgba(80, 120, 150, 0.08);
+
+  --btn-bg:        linear-gradient(180deg, #ffffff 0%, #f4f9fc 100%);
+  --btn-bg-hover:  linear-gradient(180deg, #ffffff 0%, #e7f3f9 100%);
+  --btn-border:    1px solid var(--border-primary);
+  --btn-shadow:    0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 4px 10px rgba(80, 120, 150, 0.08);
+  --btn-text:      var(--text-primary);
+  --btn-primary-text: #fff;
+  --on-gold: #fff;
+
+  --color-scheme: light;
+}
+
+/* ----------------------------------- BLUE NIGHT --------------------------- */
+/* Black night with blue light. A dark theme. */
+[data-theme="blue-night"] {
+  --bg-primary:   #05070d;
+  --bg-surface:   #0a1020;
+  --bg-elevated:  #111a2e;
+  --bg-card:      #0c1426;
+
+  --accent-primary:   #16386e;
+  --accent-secondary: #2f6fbf;
+  --accent-light:     #7eb0ee;
+  --accent-glow:      rgba(47, 111, 191, 0.48);
+
+  --text-primary:   #e7eef8;
+  --text-secondary: #a9bdd6;
+  --text-muted:     #6e849f;
+
+  --border-primary: #1c2c4a;
+  --border-subtle:  #121c32;
+
+  --gold-accent: #7eb0ee;
+  --gold-glow:   rgba(126, 176, 238, 0.42);
+
+  --highlight-red:    rgba(180, 70, 80, 0.30);
+  --highlight-orange: rgba(180, 120, 50, 0.28);
+  --highlight-yellow: rgba(90, 140, 200, 0.30);
+  --highlight-green:  rgba(50, 120, 110, 0.28);
+  --highlight-blue:   rgba(60, 130, 210, 0.34);
+  --highlight-purple: rgba(90, 80, 180, 0.30);
+
+  --accent-error:   #e06a6a;
+  --accent-success: #6dbe8a;
+  --accent-warning: #e0b15a;
+
+  --scrollbar-thumb: #1c2c4a;
+  --scrollbar-hover: #2f6fbf;
+
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body:    'Source Serif 4', Georgia, serif;
+  --font-ui:      'Source Sans 3', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --bg-texture:
+    radial-gradient(ellipse at top, rgba(47, 111, 191, 0.22) 0%, transparent 55%),
+    radial-gradient(ellipse at bottom, rgba(0, 0, 0, 0.62) 0%, transparent 70%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04  0 0 0 0 0.10  0 0 0 0 0.22  0 0 0 0.14 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  --card-sheen: linear-gradient(140deg, rgba(150, 190, 240, 0.05) 0%, transparent 40%);
+  --card-shadow: 0 1px 0 rgba(160, 200, 255, 0.05) inset, 0 8px 28px rgba(0, 0, 0, 0.55);
+
+  --btn-bg:        linear-gradient(180deg, #15243f 0%, #0a1020 100%);
+  --btn-bg-hover:  linear-gradient(180deg, #1c3054 0%, #0d1528 100%);
+  --btn-border:    1px solid #24385c;
+  --btn-shadow:    0 1px 0 rgba(160, 200, 255, 0.06) inset, 0 6px 14px rgba(0, 0, 0, 0.5);
+  --btn-text:      var(--text-primary);
+  --btn-primary-text: #fff;
+  --on-gold: #061018;
+
+  --color-scheme: dark;
+}
+
+/* ----------------------------------- NATHAN -------------------------------- */
+/* Charleston green ground, olive accent, midnight blue light. A dark theme. */
+[data-theme="nathan"] {
+  --bg-primary:   #1a211f;
+  --bg-surface:   #232B2B;
+  --bg-elevated:  #2c3533;
+  --bg-card:      #262e2c;
+
+  --accent-primary:   #4a5824;
+  --accent-secondary: #6e8234;
+  --accent-light:     #c5d48a;
+  --accent-glow:      rgba(110, 130, 52, 0.45);
+
+  --text-primary:   #e7e6dc;
+  --text-secondary: #c5c6b4;
+  --text-muted:     #8e9484;
+
+  --border-primary: #243044;
+  --border-subtle:  #1e2826;
+
+  --gold-accent: #9bb0dc;
+  --gold-glow:   rgba(25, 25, 112, 0.5);
+
+  --highlight-red:    rgba(150, 70, 60, 0.30);
+  --highlight-orange: rgba(150, 110, 40, 0.28);
+  --highlight-yellow: rgba(160, 170, 70, 0.28);
+  --highlight-green:  rgba(110, 130, 52, 0.34);
+  --highlight-blue:   rgba(36, 53, 110, 0.38);
+  --highlight-purple: rgba(70, 60, 120, 0.30);
+
+  --accent-error:   #e06a6a;
+  --accent-success: #8aaa55;
+  --accent-warning: #c6a04a;
+
+  --scrollbar-thumb: #243044;
+  --scrollbar-hover: #6e8234;
+
+  --font-display: 'Source Serif 4', Georgia, serif;
+  --font-body:    'Source Serif 4', Georgia, serif;
+  --font-ui:      'Source Sans 3', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --bg-texture:
+    radial-gradient(ellipse at top, rgba(110, 130, 52, 0.22) 0%, transparent 52%),
+    radial-gradient(ellipse at bottom, rgba(25, 25, 112, 0.38) 0%, transparent 62%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.08  0 0 0 0 0.12  0 0 0 0 0.08  0 0 0 0.12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+
+  --card-sheen: linear-gradient(140deg, rgba(180, 200, 120, 0.05) 0%, transparent 40%);
+  --card-shadow: 0 1px 0 rgba(180, 200, 140, 0.05) inset, 0 8px 28px rgba(0, 0, 0, 0.5);
+
+  --btn-bg:        linear-gradient(180deg, #2a3324 0%, #1a211f 100%);
+  --btn-bg-hover:  linear-gradient(180deg, #343e2c 0%, #202820 100%);
+  --btn-border:    1px solid #3a4630;
+  --btn-shadow:    0 1px 0 rgba(190, 210, 140, 0.06) inset, 0 6px 14px rgba(0, 0, 0, 0.45);
+  --btn-text:      var(--text-primary);
+  --btn-primary-text: #fff;
+  --on-gold: #1a211f;
+
+  --color-scheme: dark;
 }
 
 /* ============================================ */
@@ -198,13 +441,25 @@ h1, h2, .display {
 
 [data-theme="dark"] h1,
 [data-theme="dark"] h2,
-[data-theme="dark"] .display {
+[data-theme="dark"] .display,
+[data-theme="blue-night"] h1,
+[data-theme="blue-night"] h2,
+[data-theme="blue-night"] .display,
+[data-theme="nathan"] h1,
+[data-theme="nathan"] h2,
+[data-theme="nathan"] .display {
   font-weight: 700;
 }
 
 [data-theme="light"] h1,
 [data-theme="light"] h2,
-[data-theme="light"] .display {
+[data-theme="light"] .display,
+[data-theme="japan"] h1,
+[data-theme="japan"] h2,
+[data-theme="japan"] .display,
+[data-theme="wedding"] h1,
+[data-theme="wedding"] h2,
+[data-theme="wedding"] .display {
   font-weight: 700;
   letter-spacing: 0.005em;
 }
@@ -224,6 +479,27 @@ h1, h2, .display {
 [data-theme="light"] .brand-wordmark {
   color: var(--text-primary);
   font-style: italic;
+}
+
+[data-theme="japan"] .brand-wordmark {
+  color: #1a1411;
+  font-style: normal;
+  letter-spacing: 0.14em;
+}
+
+[data-theme="wedding"] .brand-wordmark {
+  color: #3a5160;
+  font-style: normal;
+}
+
+[data-theme="blue-night"] .brand-wordmark {
+  color: #e7eef8;
+  text-shadow: 0 0 14px rgba(80, 140, 220, 0.45);
+}
+
+[data-theme="nathan"] .brand-wordmark {
+  color: #e7e6dc;
+  text-shadow: 0 0 14px rgba(36, 53, 110, 0.55);
 }
 
 /* Verse references — gold illuminated feel */
@@ -265,7 +541,7 @@ h1, h2, .display {
 /* Primary action button — bolder, themed accent */
 .themed-btn-primary {
   background: linear-gradient(180deg, var(--accent-secondary) 0%, var(--accent-primary) 100%);
-  color: #fff;
+  color: var(--btn-primary-text, #fff);
   border: 1px solid var(--accent-primary);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.15) inset,
@@ -276,7 +552,9 @@ h1, h2, .display {
   letter-spacing: 0.03em;
 }
 
-[data-theme="light"] .themed-btn-primary {
+[data-theme="light"] .themed-btn-primary,
+[data-theme="japan"] .themed-btn-primary,
+[data-theme="wedding"] .themed-btn-primary {
   background: linear-gradient(180deg, var(--accent-secondary) 0%, var(--accent-primary) 100%);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.4) inset,
@@ -298,17 +576,20 @@ h1, h2, .display {
   opacity: 0.5;
   position: relative;
 }
-.themed-divider::before,
-.themed-divider::after {
+.themed-divider::before {
+  content: "";
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: var(--gold-accent);
-  opacity: 0.7;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  background: var(--gold-accent);
+  transform: translate(-50%, -50%) rotate(45deg);
 }
-[data-theme="dark"] .themed-divider::before { content: "✦"; left: 50%; transform: translate(-50%, -50%); font-size: 12px; background: var(--bg-primary); padding: 0 8px; }
-[data-theme="light"] .themed-divider::before { content: "❦"; left: 50%; transform: translate(-50%, -50%); font-size: 14px; background: var(--bg-primary); padding: 0 8px; }
+[data-theme="light"] .themed-divider::before {
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
 
 /* ============================================ */
 /* GLOW & GRADIENT EFFECTS                      */
@@ -339,6 +620,11 @@ h1, h2, .display {
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in-up { animation: fadeInUp 0.18s ease-out forwards; }
+.page-enter { animation: pageIn 240ms ease; }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
 
 @keyframes scaleIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
 .scale-in { animation: scaleIn 0.18s ease-out; }

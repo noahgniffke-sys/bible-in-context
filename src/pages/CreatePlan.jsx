@@ -16,7 +16,7 @@ const CATEGORIES = [
   { value: 'topical', label: 'Topical' },
 ]
 
-const EMOJIS = ['📖', '🙏', '✞', '🕊', '🔥', '❤️', '🌟', '🌿', '🏔', '💡', '🛡', '⚔️']
+const EMOJIS = ['📖', '🙏', '✝️', '🕊', '🔥', '❤️', '🌟', '🌿', '🏔', '💡', '🛡', '⚔️']
 
 function CreatePlan() {
   const { user } = useAuth()

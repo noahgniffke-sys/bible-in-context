@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { checkUsernameAvailable, updateProfile } from '../lib/supabase'
+import { checkUsernameAvailable, updateProfile, createProfile } from '../lib/supabase'
 import { validateUsername } from '../lib/moderation'
 import ErrorBanner from '../components/ErrorBanner'
+import CrossMark from '../components/CrossMark'
 import { useToast } from '../components/Toast'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
@@ -52,11 +53,22 @@ function CompleteProfile() {
         return
       }
 
-      const { error: updateError } = await updateProfile(user.id, {
+      const profileFields = {
         username: trimmed,
         display_name: trimmed,
         profile_setup_complete: true,
-      })
+      }
+      let { data: saved, error: updateError } = await updateProfile(user.id, profileFields)
+      if (!updateError && !saved) {
+        const created = await createProfile(user.id, profileFields)
+        updateError = created.error
+        saved = created.data
+        if (updateError?.code === '23505') {
+          const again = await updateProfile(user.id, profileFields)
+          updateError = again.error
+          saved = again.data
+        }
+      }
 
       if (updateError) {
         if (updateError.code === '23505') {
@@ -68,6 +80,7 @@ function CompleteProfile() {
         setSubmitting(false)
         return
       }
+      if (!saved) throw new Error('Could not save your username. Try again.')
 
       refreshProfile().catch(() => {})
       triggerHaptic(HapticStyle.SUCCESS)
@@ -84,8 +97,8 @@ function CompleteProfile() {
     <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-4" style={{ color: 'var(--gold-accent)', textShadow: '0 0 22px var(--gold-glow)' }}>
-            {'✞'}
+          <div className="mb-4 inline-flex" style={{ color: 'var(--gold-accent)', filter: 'drop-shadow(0 0 22px var(--gold-glow))' }}>
+            <CrossMark size={56} />
           </div>
           <h1 className="brand-wordmark text-2xl mb-2">Choose Your Username</h1>
           <div className="themed-divider my-3" style={{ width: '40%' }} />

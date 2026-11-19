@@ -78,7 +78,7 @@ export const BUILT_IN_PLANS = [
   {
     slug: 'crucifixion-to-resurrection',
     title: 'Crucifixion to Resurrection',
-    emoji: '✝',
+    emoji: '✝️',
     category: 'devotional',
     description:
       'Seven days walking the final week of Jesus — from triumphal entry to empty tomb — across all four Gospels.',

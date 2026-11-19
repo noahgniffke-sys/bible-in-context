@@ -34,7 +34,7 @@ function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 pb-20">
+      <main key={location.pathname} className="flex-1 pb-20 page-enter">
         <Outlet />
       </main>
 

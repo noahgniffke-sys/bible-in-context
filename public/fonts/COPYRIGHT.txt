@@ -1,0 +1,12 @@
+Reading fonts bundled with Bible in Context. Each is licensed under the SIL Open Font License 1.1. The license text is OFL.txt in this folder. Files are the Latin woff2 builds published by Fontsource on GitHub.
+
+Source Serif 4 — Copyright 2014 The Source Serif 4 Project Authors (https://github.com/adobe-fonts/source-serif)
+Source Sans 3 — Copyright 2010-2020 Adobe, with Reserved Font Name "Source"
+Literata — Copyright 2017 The Literata Project Authors (https://github.com/googlefonts/literata)
+Lora — Copyright 2011 The Lora Project Authors (https://github.com/cyrealtype/Lora-Cyrillic), with Reserved Font Name "Lora"
+Merriweather — Copyright 2020 The Merriweather Project Authors (https://github.com/EbenSorkin/Merriweather4), with Reserved Font Name "Merriweather"
+Newsreader — Copyright 2020 The Newsreader Project Authors (https://github.com/productiontype/Newsreader)
+Libre Baskerville — Copyright 2012 The Libre Baskerville Project Authors (https://github.com/impallari/Libre-Baskerville), with Reserved Font Name "Libre Baskerville"
+Atkinson Hyperlegible Next — Copyright 2020-2024 The Atkinson Hyperlegible Next Project Authors (https://github.com/googlefonts/atkinson-hyperlegible-next)
+Lexend — Copyright 2018 The Lexend Project Authors (https://github.com/googlefonts/lexend), with Reserved Font Name "RevReading Lexend"
+Andika — Copyright 2004-2022 SIL International (https://github.com/silnrsi/font-andika), with Reserved Font Names "Andika" and "SIL"

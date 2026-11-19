@@ -18,22 +18,27 @@ export default function useFollowToggle(targetUserId, initialFollowing = false) 
 
     setLoading(true)
     triggerHaptic(HapticStyle.LIGHT)
+    const next = !isFollowing
+    setIsFollowing(next)
 
     try {
-      if (isFollowing) {
-        await supabase.from('follows')
+      if (!next) {
+        const { error } = await supabase.from('follows')
           .delete()
           .eq('follower_id', user.id)
           .eq('following_id', targetUserId)
-        setIsFollowing(false)
+        if (error) throw error
       } else {
-        await supabase.from('follows')
+        const { error } = await supabase.from('follows')
           .insert([{ follower_id: user.id, following_id: targetUserId }])
-        setIsFollowing(true)
+        if (error && error.code !== '23505') throw error
         triggerHaptic(HapticStyle.SUCCESS)
       }
+      return true
     } catch (err) {
       console.error('Follow toggle error:', err)
+      setIsFollowing(!next)
+      return false
     } finally {
       setLoading(false)
     }

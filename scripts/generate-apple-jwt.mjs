@@ -4,21 +4,25 @@
 // before the expiry shown at the bottom of the output.
 //
 // Usage:
-//   node scripts/generate-apple-jwt.mjs
+//   APPLE_TEAM_ID=... APPLE_KEY_ID=... APPLE_KEY_PATH=/path/to/AuthKey.p8 node scripts/generate-apple-jwt.mjs
 //
-// Requires the .p8 file at the path below. Update if you move it.
+// The .p8 file stays on your Mac. Do not commit it.
 
 import crypto from 'crypto'
 import fs from 'fs'
 
-const TEAM_ID = 'T5C7G8A7GP'
-const KEY_ID = 'YOUR_KEY_ID'
-const CLIENT_ID = 'com.noahgniffke.bibleincontext.web'
-const KEY_PATH = process.env.APPLE_KEY_PATH || ''
+const TEAM_ID = process.env.APPLE_TEAM_ID
+const KEY_ID = process.env.APPLE_KEY_ID
+const CLIENT_ID = process.env.APPLE_CLIENT_ID || 'com.noahgniffke.bibleincontext.web'
+const KEY_PATH = process.env.APPLE_KEY_PATH
+
+if (!TEAM_ID || !KEY_ID || !KEY_PATH) {
+  console.error('Set APPLE_TEAM_ID, APPLE_KEY_ID, and APPLE_KEY_PATH. The .p8 file stays off this repo.')
+  process.exit(1)
+}
 
 if (!fs.existsSync(KEY_PATH)) {
-  console.error(`Apple key not found at: ${KEY_PATH}`)
-  console.error('Set APPLE_KEY_PATH=/path/to/AuthKey_XXXX.p8 if you moved it.')
+  console.error('Apple key file was not found. Check APPLE_KEY_PATH.')
   process.exit(1)
 }
 

@@ -16,7 +16,7 @@ export const CAPTIONS: Caption[] = [
     eyebrow: "The Word",
     title: "Read what was actually written.",
     caption:
-      "Public-domain translations — WEB, KJV, ASV — bundled and offline-first. No paywalls between you and Scripture.",
+      "Five public-domain translations, led by the Berean Standard Bible. Bundled, offline, and readable in plain English. NIV, NLT, and ESV stay with their publishers.",
   },
   {
     start: 5,
@@ -48,7 +48,7 @@ export const CAPTIONS: Caption[] = [
     eyebrow: "Free, forever",
     title: "No subscriptions. No ads.",
     caption:
-      "Built for the church, given to the church. Optional account for sync, notes, and community Bible plans.",
+      "Get the verse of the day at noon, and keep follows in sync. Sign in with Apple or Google. No subscriptions. No ads.",
   },
 ];
 

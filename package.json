@@ -1,7 +1,7 @@
 {
   "name": "bible-in-context",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.4.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "cap:sync": "npm run build && npx cap sync ios",
     "cap:open": "npx cap open ios",
-    "ios": "npm run build && npx cap sync ios && npx cap open ios"
+    "ios": "npm run build && npx cap sync ios && npx cap open ios",
+    "postinstall": "node scripts/keep-google-signin-fix.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^8.0.1",
@@ -19,6 +20,7 @@
     "@capacitor/core": "^8.2.0",
     "@capacitor/haptics": "^8.0.1",
     "@capacitor/ios": "^8.2.0",
+    "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/share": "^8.0.1",
     "@capgo/capacitor-social-login": "^8.3.9",
     "@supabase/supabase-js": "^2.100.0",

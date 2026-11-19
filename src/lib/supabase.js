@@ -95,6 +95,10 @@ export async function createProfile(userId, profileData) {
 // Synchronously read the access token from localStorage. Supabase-js stores
 // the session there; we read it directly to avoid getSession() (which can
 // trigger an internal token refresh that hangs).
+export function hasStoredSession() {
+  return Boolean(readAccessToken())
+}
+
 function readAccessToken() {
   try {
     const projectRef = supabaseUrl.replace(/^https?:\/\//, '').split('.')[0]

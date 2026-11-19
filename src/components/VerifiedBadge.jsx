@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { VERIFIED_MOTTO, VERIFIED_VERSES, isVerified } from '../lib/verified'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
+import CrossMark from './CrossMark'
 
 // Small white cross badge shown next to verified usernames.
 // Tap opens a modal with the founders' creed and verse references.
@@ -36,9 +37,9 @@ function VerifiedBadge({ username, size = 14, inline = true }) {
         aria-label="Verified account"
         title="Verified account"
         className={`${inline ? 'inline-flex' : 'flex'} items-center justify-center rounded-full bg-white text-[var(--accent-secondary)] flex-shrink-0 active:scale-90 transition-transform`}
-        style={{ width: size + 6, height: size + 6, minWidth: size + 6, minHeight: size + 6, padding: 0, lineHeight: 1, fontSize: size, fontWeight: 700 }}
+        style={{ width: size + 6, height: size + 6, minWidth: size + 6, minHeight: size + 6, padding: 0, lineHeight: 1 }}
       >
-        ✞
+        <CrossMark size={size} />
       </button>
 
       {open && (
@@ -54,9 +55,9 @@ function VerifiedBadge({ username, size = 14, inline = true }) {
             <div className="flex justify-center mb-3">
               <span
                 className="inline-flex items-center justify-center rounded-full bg-white text-[var(--accent-secondary)]"
-                style={{ width: 40, height: 40, fontSize: 22, fontWeight: 700 }}
+                style={{ width: 40, height: 40 }}
               >
-                ✞
+                <CrossMark size={22} />
               </span>
             </div>
 

@@ -4,20 +4,25 @@ import { triggerHaptic, HapticStyle } from '../lib/haptics'
 const DISMISS_KEY = 'bic_update_dismissed_v'
 
 function UpdateAvailableModal({ storeVersion, releaseNotes, url, onClose }) {
+  function remember() {
+    try {
+      localStorage.setItem(`${DISMISS_KEY}${storeVersion}`, 'seen')
+    } catch {}
+  }
+
   async function handleUpdate() {
     triggerHaptic(HapticStyle.SUCCESS)
+    remember()
     try {
       await Browser.open({ url })
     } catch {
       window.open(url, '_blank', 'noopener,noreferrer')
     }
+    onClose?.()
   }
 
   function handleLater() {
     triggerHaptic(HapticStyle.LIGHT)
-    try {
-      localStorage.setItem(`${DISMISS_KEY}${storeVersion}`, String(Date.now()))
-    } catch {}
     onClose?.()
   }
 
@@ -26,7 +31,7 @@ function UpdateAvailableModal({ storeVersion, releaseNotes, url, onClose }) {
       <div className="w-full max-w-md bg-[var(--bg-elevated)] border border-[var(--gold-accent)]/40 rounded-2xl p-6 shadow-2xl">
         <div className="flex flex-col items-center text-center">
           <div className="w-14 h-14 rounded-full bg-[var(--gold-accent)] flex items-center justify-center mb-4">
-            <span className="text-2xl text-black">⟳</span>
+            <span className="text-2xl text-[var(--on-gold)]">⟳</span>
           </div>
           <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Update Available</h3>
           <p className="text-sm text-[var(--text-secondary)] mb-4">
@@ -43,7 +48,7 @@ function UpdateAvailableModal({ storeVersion, releaseNotes, url, onClose }) {
           <div className="w-full flex flex-col gap-3">
             <button
               onClick={handleUpdate}
-              className="w-full py-3 rounded-xl font-bold bg-[var(--gold-accent)] text-black hover:opacity-90 active:scale-95 transition-all"
+              className="w-full py-3 rounded-xl font-bold bg-[var(--gold-accent)] text-[var(--on-gold)] hover:opacity-90 active:scale-95 transition-all"
             >
               Update Now
             </button>
@@ -62,9 +67,7 @@ function UpdateAvailableModal({ storeVersion, releaseNotes, url, onClose }) {
 
 export function wasDismissed(storeVersion) {
   try {
-    const ts = localStorage.getItem(`${DISMISS_KEY}${storeVersion}`)
-    if (!ts) return false
-    return Date.now() - parseInt(ts, 10) < 24 * 60 * 60 * 1000
+    return localStorage.getItem(`${DISMISS_KEY}${storeVersion}`) === 'seen'
   } catch {
     return false
   }

@@ -3,6 +3,8 @@
 // Greek: G1-G5624 (New Testament)
 // Hebrew: H1-H8674 (Old Testament)
 
+import { isNarrativeHistoricalPresent } from './passage-style'
+
 let greekLexicon = null
 let hebrewLexicon = null
 const mappingCache = {}
@@ -54,20 +56,40 @@ export async function lookupStrongs(strongsNumber) {
   }
 }
 
+async function ensureMapping(bookId) {
+  const key = String(bookId || '').split('.')[0].toUpperCase()
+  if (!mappingCache[key]) {
+    try {
+      const module = await import(`../data/strongs/mappings/${key.toLowerCase()}.json`)
+      mappingCache[key] = module.default || module
+    } catch {
+      mappingCache[key] = {}
+    }
+  }
+  return mappingCache[key]
+}
+
+// Raw Strong's rows for every verse in a chapter, without lexicon lookups.
+export async function getRawChapterWords(bookId, chapter) {
+  const book = String(bookId || '').toUpperCase()
+  const mapping = await ensureMapping(book)
+  const prefix = `${book}.${Number(chapter)}.`
+  const verses = {}
+  for (const [ref, words] of Object.entries(mapping)) {
+    if (!ref.startsWith(prefix)) continue
+    const n = Number(ref.slice(prefix.length))
+    if (!Number.isInteger(n)) continue
+    verses[n] = words
+  }
+  return verses
+}
+
 // Get Strong's numbers for a specific verse
 export async function getStrongsForVerse(verseRef) {
   const bookId = verseRef.split('.')[0]
-
-  if (!mappingCache[bookId]) {
-    try {
-      const module = await import(`../data/strongs/mappings/${bookId.toLowerCase()}.json`)
-      mappingCache[bookId] = module.default || module
-    } catch {
-      mappingCache[bookId] = {}
-    }
-  }
-
-  const numbers = mappingCache[bookId][verseRef] || []
+  const mapping = await ensureMapping(bookId)
+  const normalizedRef = `${bookId.toUpperCase()}${verseRef.slice(bookId.length)}`
+  const numbers = mapping[normalizedRef] || mapping[verseRef] || []
 
   // Get a clean simple definition from the full scholarly one
   function getSimpleDefinition(definition) {
@@ -591,7 +613,7 @@ function pickKeyTerms(words, limit = 2) {
   return unique.slice(0, limit)
 }
 
-function buildVerbAnalysis(verb, isGreek) {
+function buildVerbAnalysis(verb, isGreek, historicalPresent) {
   if (!verb) return ''
   const desc = (verb.morphDescription || '').toLowerCase()
   const translit = verb.transliteration || verb.originalWord
@@ -607,7 +629,12 @@ function buildVerbAnalysis(verb, isGreek) {
 
   const notes = []
   if (stem) notes.push(`${stem} stem (${HEBREW_STEM_SENSE[stem]})`)
-  if (tense) notes.push(`${tense}${isGreek ? ' tense' : ''} — ${tenseMap[tense]}`)
+  if (tense) {
+    const sense = historicalPresent && tense === 'present'
+      ? 'a past event told in the present tense, so the moment feels immediate'
+      : tenseMap[tense]
+    notes.push(`${tense}${isGreek ? ' tense' : ''} — ${sense}`)
+  }
   if (voice) notes.push(`${voice} voice (${VOICE_SENSE[voice]})`)
   if (mood && mood !== tense) notes.push(`${mood} mood (${MOOD_SENSE[mood]})`)
 
@@ -635,13 +662,14 @@ function buildTermsAnalysis(terms, isGreek) {
   return `Key ${lang} nouns here: ${pieces.join(joiner)}.`
 }
 
-function generateVerseAnalysis(words, language) {
+function generateVerseAnalysis(words, language, bookId) {
   if (!words || words.length === 0) return ''
   const isGreek = language === 'Greek'
   const mainVerb = pickMainVerb(words)
   const keyTerms = pickKeyTerms(words, 2)
   const parts = []
-  const v = buildVerbAnalysis(mainVerb, isGreek)
+  const historicalPresent = isNarrativeHistoricalPresent(mainVerb, words, bookId)
+  const v = buildVerbAnalysis(mainVerb, isGreek, historicalPresent)
   if (v) parts.push(v)
   const t = buildTermsAnalysis(keyTerms, isGreek)
   if (t) parts.push(t)
@@ -788,17 +816,21 @@ function computeVerseType({ words, text, bookId }) {
 export function detectVerseType({ words, text, bookId }) {
   const base = computeVerseType({ words, text, bookId })
   const language = getLanguageForBook(bookId)
-  const analysis = generateVerseAnalysis(words, language)
+  const analysis = generateVerseAnalysis(words, language, bookId)
   return { ...base, analysis }
 }
 
 // Rewrite a grammatical form into plain-English meaning for someone with no
 // Greek/Hebrew background. Returns a single self-contained sentence.
-function explainFormInPlainEnglish(word, isGreek) {
+function explainFormInPlainEnglish(word, isGreek, historicalPresent) {
   if (!word) return ''
   const desc = (word.morphDescription || '').toLowerCase()
   const english = word.englishWord || word.simpleDefinition || ''
   const label = english ? `"${english}"` : 'this word'
+
+  if (isGreek && historicalPresent) {
+    return `${label} is present tense in a past story. Greek writers do this to make one completed moment feel immediate. It is not an action that keeps repeating.`
+  }
 
   if (isGreek) {
     if (/aorist/.test(desc)) {
@@ -853,7 +885,7 @@ function explainFormInPlainEnglish(word, isGreek) {
 
 // Build a plain-English summary of the verse that a first-time reader
 // could read on its own and actually understand.
-export function generatePlainEnglish(verseText, words, language) {
+export function generatePlainEnglish(verseText, words, language, bookId) {
   if (!verseText) return { simplified: '', insights: [] }
 
   // Step 1 — modernize KJV wording so the verse reads in today's English
@@ -873,7 +905,11 @@ export function generatePlainEnglish(verseText, words, language) {
 
   const insights = []
 
-  const verbInsight = explainFormInPlainEnglish(mainVerb, isGreek)
+  const verbInsight = explainFormInPlainEnglish(
+    mainVerb,
+    isGreek,
+    isNarrativeHistoricalPresent(mainVerb, words, bookId),
+  )
   if (verbInsight) insights.push(verbInsight)
 
   for (const term of keyTerms) {
@@ -960,6 +996,20 @@ const KJV_TO_MODERN = {
   'forthwith':'immediately','notwithstanding':'nevertheless',
   'howbeit':'however','albeit':'although','lo':'look','behold':'look',
   'yea':'yes','nay':'no','amen':'amen',
+}
+
+// Rewrite archaic commentary into today's English without changing the meaning.
+export function modernizeProse(text) {
+  if (!text || typeof text !== 'string') return text
+  let out = text
+  const entries = Object.entries(KJV_TO_MODERN).sort((a, b) => b[0].length - a[0].length)
+  for (const [archaic, modern] of entries) {
+    const modernCap = modern[0].toUpperCase() + modern.slice(1)
+    const cap = archaic[0].toUpperCase() + archaic.slice(1)
+    out = out.replace(new RegExp(`\\b${cap}\\b`, 'g'), modernCap)
+    out = out.replace(new RegExp(`\\b${archaic}\\b`, 'g'), modern)
+  }
+  return out
 }
 
 // Match English words from interlinear to the current translation's wording

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { lookupStrongs, parseStrongsDefinition } from '../lib/strongs'
+import { getLexiconNote } from '../lib/lexicon-notes'
+import LexiconNote from '../components/LexiconNote'
 import { getVersesForStrongs, getChapter, getTranslation, getTranslationName } from '../lib/bible-api'
 import { BIBLE_BOOKS } from '../lib/bible-books'
 import BackButton from '../components/BackButton'
@@ -27,6 +29,7 @@ function Lexicon() {
   const language = strongsNum.startsWith('G') ? 'Greek' : strongsNum.startsWith('H') ? 'Hebrew' : ''
 
   const [lexEntry, setLexEntry] = useState(null)
+  const [lexiconNote, setLexiconNote] = useState(null)
   const [verses, setVerses] = useState([])
   const [verseTexts, setVerseTexts] = useState({})
   const [loading, setLoading] = useState(true)
@@ -37,15 +40,18 @@ function Lexicon() {
     async function load() {
       if (!strongsNum) { setLoading(false); return }
       setLoading(true)
+      setLexiconNote(null)
       setVerseTexts({})
 
-      const [entry, allVerses] = await Promise.all([
+      const [entry, allVerses, note] = await Promise.all([
         lookupStrongs(strongsNum),
         getVersesForStrongs(strongsNum),
+        getLexiconNote(strongsNum),
       ])
       if (cancelled) return
 
       setLexEntry(entry)
+      setLexiconNote(note)
       const limited = allVerses.slice(0, MAX_VERSES)
       setTruncated(allVerses.length > MAX_VERSES)
       setVerses(limited)
@@ -194,6 +200,8 @@ function Lexicon() {
               )}
             </div>
           )}
+
+          {lexiconNote && <LexiconNote note={lexiconNote} />}
 
           {/* Verses grouped by book */}
           <div>

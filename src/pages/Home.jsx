@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useTheme } from '../contexts/ThemeContext'
+import ThemePicker from '../components/ThemePicker'
+import FontPicker from '../components/FontPicker'
 import { useAuth } from '../hooks/useAuth'
 import { getTranslation, setTranslation, getTranslationName, AVAILABLE_TRANSLATIONS } from '../lib/bible-api'
 import { useToast } from '../components/Toast'
@@ -8,7 +9,6 @@ import { triggerHaptic, HapticStyle } from '../lib/haptics'
 import VerseOfTheDay from '../components/VerseOfTheDay'
 
 function Home() {
-  const { theme, toggleTheme } = useTheme()
   const { user } = useAuth()
   const toast = useToast()
   const [currentTranslation, setCurrentTranslation] = useState(getTranslation())
@@ -40,25 +40,25 @@ function Home() {
       {/* Quick actions */}
       <div className="grid grid-cols-2 gap-3 mb-4">
         <QuickAction
-          emoji="📖"
+          mark="Read"
           label="Continue Reading"
           description="Pick up where you left off"
           to="/bible"
         />
         <QuickAction
-          emoji="🔍"
+          mark="Find"
           label="Search"
-          description="Find verses and topics"
+          description="A verse, a reference, or a few words"
           to="/search"
         />
         <QuickAction
-          emoji="📝"
+          mark="Notes"
           label="My Notes"
           description="Personal study notes"
           to="/notes"
         />
         <QuickAction
-          emoji="🙏"
+          mark="Pray"
           label="Prayers"
           description="Prayer journal"
           to="/prayers"
@@ -75,7 +75,7 @@ function Home() {
         >
           <div>
             <p className="font-medium text-[var(--text-primary)]">
-              📜 Translation
+              Translation
             </p>
             <p className="text-sm text-[var(--text-muted)]">
               {currentTranslation} — {getTranslationName(currentTranslation)}
@@ -116,36 +116,19 @@ function Home() {
         )}
       </div>
 
-      {/* Theme toggle */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-[var(--text-primary)]">
-              {theme === 'dark' ? '⚔️ Noah Theme' : '🌸 Allie Theme'}
-            </p>
-            <p className="text-xs text-[var(--text-muted)]">
-              {theme === 'dark' ? '(Dark)' : '(Light)'}
-            </p>
-          </div>
-          <button
-            onClick={toggleTheme}
-            className="px-4 py-2 rounded-lg bg-[var(--accent-secondary)] text-white text-sm font-medium active:scale-95"
-          >
-            {theme === 'dark' ? '🌙 Dark' : '☀️ Light'}
-          </button>
-        </div>
-      </div>
+      <ThemePicker />
+      <FontPicker className="mt-3" />
     </div>
   )
 }
 
-function QuickAction({ emoji, label, description, to }) {
+function QuickAction({ mark, label, description, to }) {
   return (
     <Link
       to={to}
       className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4 block active:scale-95 transition-transform"
     >
-      <div className="text-2xl mb-2">{emoji}</div>
+      <div className="text-[10px] uppercase tracking-[0.18em] text-[var(--gold-accent)] font-semibold mb-2">{mark}</div>
       <p className="font-medium text-[var(--text-primary)] text-sm">{label}</p>
       <p className="text-xs text-[var(--text-muted)]">{description}</p>
     </Link>

@@ -120,3 +120,158 @@ export function buildVerseRef(bookId, chapter, verse) {
   if (verse != null) return `${bookId}.${chapter}.${verse}`
   return `${bookId}.${chapter}`
 }
+
+const NUMBER_WORDS = [
+  ['1', '1', 'i', 'first', '1st'],
+  ['2', '2', 'ii', 'second', '2nd'],
+  ['3', '3', 'iii', 'third', '3rd'],
+]
+
+const EXTRA_ALIASES = {
+  psalm: 'PSA',
+  psalms: 'PSA',
+  ps: 'PSA',
+  'song of songs': 'SNG',
+  'song of solomon': 'SNG',
+  canticles: 'SNG',
+  revelations: 'REV',
+  apocalypse: 'REV',
+  john: 'JHN',
+  jn: 'JHN',
+  joh: 'JHN',
+  'gospel of john': 'JHN',
+  'gospel of matthew': 'MAT',
+  'gospel of mark': 'MRK',
+  'gospel of luke': 'LUK',
+  matt: 'MAT',
+  mk: 'MRK',
+  lk: 'LUK',
+  'acts of the apostles': 'ACT',
+}
+
+let aliasList = null
+
+function editDistance(a, b) {
+  if (a === b) return 0
+  const la = a.length
+  const lb = b.length
+  if (Math.abs(la - lb) > 2) return 3
+  const dp = Array.from({ length: la + 1 }, () => new Array(lb + 1).fill(0))
+  for (let i = 0; i <= la; i++) dp[i][0] = i
+  for (let j = 0; j <= lb; j++) dp[0][j] = j
+  for (let i = 1; i <= la; i++) {
+    for (let j = 1; j <= lb; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost)
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1)
+      }
+    }
+  }
+  return dp[la][lb]
+}
+
+function aliasEntries() {
+  if (aliasList) return aliasList
+  const map = new Map()
+  function add(alias, id) {
+    const key = alias.toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim()
+    if (!key || map.has(key)) return
+    if (key.length < 3 && key !== 'ps' && key !== 'jn') return
+    map.set(key, id)
+  }
+
+  for (const book of BIBLE_BOOKS) {
+    add(book.name, book.id)
+    add(book.abbr, book.id)
+    add(book.id, book.id)
+    add(book.name.replace(/\s+/g, ''), book.id)
+    const numbered = book.name.match(/^([123])\s+(.+)$/)
+    if (numbered) {
+      const forms = NUMBER_WORDS[Number(numbered[1]) - 1] || []
+      for (const form of forms) add(`${form} ${numbered[2]}`, book.id)
+      add(`${numbered[1]}${numbered[2]}`, book.id)
+      add(`${numbered[1]}${numbered[2].replace(/\s+/g, '')}`, book.id)
+    }
+  }
+  for (const [alias, id] of Object.entries(EXTRA_ALIASES)) add(alias, id)
+
+  aliasList = [...map.entries()]
+    .map(([alias, id]) => ({ alias, id }))
+    .sort((a, b) => b.alias.length - a.alias.length)
+  return aliasList
+}
+
+function numbersAfter(rest) {
+  const nums = (rest.match(/\d+/g) || []).map(n => parseInt(n, 10)).filter(n => n > 0)
+  return nums
+}
+
+function pack(bookId, nums) {
+  const book = getBookById(bookId)
+  if (!book || !nums.length) return { bookId, chapter: null, verse: null, verseEnd: null }
+  const chapter = nums[0]
+  if (chapter > book.chapters) return null
+  const verse = nums[1] || null
+  const verseEnd = nums[2] && nums[2] >= (verse || 0) ? nums[2] : null
+  return { bookId, chapter, verse, verseEnd }
+}
+
+// Turn "jn 3:16", "jonh 3 16", "psalm 23", or "1 cor 13:4" into a passage.
+// Returns null when the text is not a reference.
+export function parseReadingQuery(raw) {
+  if (!raw || typeof raw !== 'string') return null
+  let q = raw.toLowerCase().replace(/[’']/g, '')
+  q = q.replace(/[._:;,/|]+/g, ' ')
+  q = q.replace(/(\d)\s*[-–—]\s*(\d)/g, '$1 $2')
+  q = q.replace(/([a-z])(\d)/g, '$1 $2')
+  q = q.replace(/\b([123])(?=[a-z])/g, '$1 ')
+  q = q.replace(/\s+/g, ' ').trim()
+  if (!q) return null
+
+  const aliases = aliasEntries()
+
+  for (const { alias, id } of aliases) {
+    if (q === alias || q.startsWith(`${alias} `)) {
+      return pack(id, numbersAfter(q.slice(alias.length))) || null
+    }
+  }
+
+  for (const { alias, id } of aliases) {
+    const idx = q.indexOf(alias)
+    if (idx < 0) continue
+    const before = idx === 0 ? '' : q[idx - 1]
+    if (before && before !== ' ') continue
+    const prefix = q.slice(0, idx).trim()
+    if (/\d$/.test(prefix)) continue
+    const after = q.slice(idx + alias.length).trim()
+    if (!/^\d/.test(after)) continue
+    const hit = pack(id, numbersAfter(after))
+    if (hit?.chapter) return hit
+  }
+
+  const parts = q.split(' ')
+  if (parts.length >= 2 && /^\d+$/.test(parts[1]) && parts[0].length >= 4) {
+    let best = null
+    let bestScore = 99
+    for (const entry of aliases) {
+      if (entry.alias.includes(' ')) continue
+      if (Math.abs(entry.alias.length - parts[0].length) > 2) continue
+      const d = editDistance(parts[0], entry.alias)
+      if (d === 0 || d > 1) continue
+      const score = d * 10 + Math.abs(entry.alias.length - parts[0].length)
+      if (score < bestScore) {
+        bestScore = score
+        best = entry
+      } else if (score === bestScore) {
+        const bestSame = best && best.alias.split('').sort().join('') === parts[0].split('').sort().join('')
+        const nextSame = entry.alias.split('').sort().join('') === parts[0].split('').sort().join('')
+        if (nextSame && !bestSame) best = entry
+        else if (!(bestSame && !nextSame)) best = null
+      }
+    }
+    if (best) return pack(best.id, numbersAfter(parts.slice(1).join(' ')))
+  }
+
+  return null
+}

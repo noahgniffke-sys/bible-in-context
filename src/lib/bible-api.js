@@ -1,6 +1,12 @@
-// Bible text — fully bundled, no API needed
-// BSB, KJV, WEB, ASV, YLT, AKJV, NHEB, DBY, GNV — all public domain
+// Bible text — fully bundled, no API needed.
+// The picker offers the five strongest public-domain texts.
+// BSB is the default: modern English, accurate, easy to read.
+// NIV, NLT, and ESV are copyrighted and are not bundled.
 // Data loaded per-book via dynamic import for fast initial load
+
+import { parseReadingQuery, getBookById } from './bible-books.js'
+
+const DEFAULT_TRANSLATION = 'BSB'
 
 const bookCache = {}
 let lemmaIndexCache = null
@@ -43,7 +49,7 @@ const TRANSLATION_DESC = {
   GNV: 'Reformation classic, 1599',
 }
 
-export const AVAILABLE_TRANSLATIONS = ['BSB', 'WEB', 'KJV', 'ASV', 'YLT', 'AKJV', 'NHEB', 'DBY', 'GNV']
+export const AVAILABLE_TRANSLATIONS = ['BSB', 'WEB', 'KJV', 'ASV', 'YLT']
 
 async function loadBook(bookId, translation) {
   const key = `${translation}_${bookId}`
@@ -79,7 +85,7 @@ async function loadBook(bookId, translation) {
 }
 
 // Fetch a chapter's verses as an array of { number, text, ref }
-export async function getChapter(bookId, chapter, translation = 'WEB') {
+export async function getChapter(bookId, chapter, translation = DEFAULT_TRANSLATION) {
   const bookData = await loadBook(bookId, translation)
   const chapterData = bookData[String(chapter)]
   if (!chapterData) {
@@ -106,7 +112,7 @@ export async function getChapter(bookId, chapter, translation = 'WEB') {
 }
 
 // Fetch a single verse
-export async function getVerse(bookId, chapter, verse, translation = 'WEB') {
+export async function getVerse(bookId, chapter, verse, translation = DEFAULT_TRANSLATION) {
   const bookData = await loadBook(bookId, translation)
   const text = bookData?.[String(chapter)]?.[String(verse)]
   if (!text) return null
@@ -171,10 +177,138 @@ async function collectStrongsForQuery(queryWords) {
   return matched
 }
 
-// Search Bible text — handles exact phrases, individual words, misspellings,
-// AND Greek/Hebrew lemmas (so "fornication" finds G4202 verses on WEB).
-export async function searchBible(query, translation = 'WEB', limit = 30) {
+function verseWords(text) {
+  return text.toLowerCase().replace(/[^a-z0-9'\s]/g, ' ').split(/\s+/).filter(Boolean)
+}
+
+function boundedEdit(a, b) {
+  if (a === b) return 0
+  const la = a.length
+  const lb = b.length
+  if (Math.abs(la - lb) > 2) return 3
+  let prev = Array.from({ length: lb + 1 }, (_, i) => i)
+  for (let i = 1; i <= la; i++) {
+    const cur = [i]
+    let rowMin = i
+    for (let j = 1; j <= lb; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
+      cur[j] = v
+      if (v < rowMin) rowMin = v
+    }
+    if (rowMin > 2) return 3
+    prev = cur
+  }
+  return prev[lb]
+}
+
+function wordDistance(queryWord, textWord) {
+  const qw = queryWord.replace(/'/g, '')
+  const tw = textWord.replace(/'/g, '')
+  if (!qw || !tw) return 9
+  if (qw === tw) return 0
+  if (tw.startsWith(qw) && qw.length >= 3) return 0
+  if (qw.length < 4) return 9
+  const limit = qw.length >= 8 ? 2 : 1
+  const d = boundedEdit(qw, tw)
+  return d <= limit ? d : 9
+}
+
+// How much of a typed sentence shows up in a verse, allowing typos,
+// skipped words, and a few words in the wrong place.
+function coverageScore(queryWords, text) {
+  const textWords = verseWords(text)
+  if (!queryWords.length || !textWords.length) return 0
+  let cursor = 0
+  let matched = 0
+  let exact = 0
+  for (const qw of queryWords) {
+    let foundAt = -1
+    let best = 9
+    const windowEnd = Math.min(textWords.length, cursor + 10)
+    for (let j = cursor; j < windowEnd; j++) {
+      const d = wordDistance(qw, textWords[j])
+      if (d < best) {
+        best = d
+        foundAt = j
+      }
+      if (d === 0) break
+    }
+    if (foundAt < 0) {
+      for (let j = 0; j < textWords.length; j++) {
+        const d = wordDistance(qw, textWords[j])
+        if (d < best) {
+          best = d
+          foundAt = j
+        }
+        if (d === 0) break
+      }
+    }
+    if (foundAt >= 0 && best < 9) {
+      matched++
+      if (best === 0) exact++
+      cursor = foundAt + 1
+    }
+  }
+  const ratio = matched / queryWords.length
+  const need = queryWords.length >= 6 ? 0.55 : queryWords.length >= 3 ? 0.7 : 1
+  if (ratio < need) return 0
+  return 1.2 + ratio + (exact / queryWords.length) * 0.6
+}
+
+function scoreVerseText(text, lower, queryWords) {
+  const textLower = text.toLowerCase()
+  if (textLower.includes(lower)) return 4
+  if (queryWords.length > 1 && queryWords.every(w => textLower.includes(w))) return 3
+  if (queryWords.length > 1) {
+    const hits = queryWords.filter(w => textLower.includes(w)).length
+    if (hits >= Math.ceil(queryWords.length * 0.6)) {
+      return 1.4 + hits / queryWords.length
+    }
+    return coverageScore(queryWords, text)
+  }
+  if (queryWords.length === 1) {
+    const qw = queryWords[0]
+    const textWords = verseWords(textLower)
+    if (textWords.some(tw => tw.startsWith(qw))) return 1.5
+    if (qw.length >= 4 && textWords.some(tw => wordDistance(qw, tw) < 9)) return 0.8
+  }
+  return 0
+}
+
+async function referenceResults(parsed, translation) {
+  const book = getBookById(parsed.bookId)
+  if (!book || !parsed.chapter) return []
+  const data = await getChapter(parsed.bookId, parsed.chapter, translation)
+  let rows = data.verses
+  if (parsed.verse) {
+    const end = parsed.verseEnd || parsed.verse
+    rows = rows.filter(v => v.number >= parsed.verse && v.number <= end)
+  } else {
+    rows = rows.slice(0, 20)
+  }
+  return rows.map(v => ({
+    ref: v.ref,
+    text: v.text,
+    reference: `${book.name} ${parsed.chapter}:${v.number}`,
+    bookId: parsed.bookId,
+    chapterId: `${parsed.bookId}.${parsed.chapter}`,
+    score: parsed.verse ? 10 : 6,
+    matchedVia: 'reference',
+  }))
+}
+
+// Search Bible text — references, whole verses, typos, missing words,
+// and Greek/Hebrew lemmas.
+export async function searchBible(query, translation = DEFAULT_TRANSLATION, limit = 30) {
   if (!query?.trim()) return { verses: [], total: 0 }
+
+  const activeTranslation = AVAILABLE_TRANSLATIONS.includes(translation) ? translation : DEFAULT_TRANSLATION
+  const reference = parseReadingQuery(query)
+  if (reference?.chapter) {
+    const direct = await referenceResults(reference, activeTranslation)
+    if (direct.length) return { verses: direct.slice(0, limit), total: direct.length }
+  }
 
   const { BIBLE_BOOKS } = await import('./bible-books.js')
   const lower = query.toLowerCase().trim()
@@ -192,7 +326,7 @@ export async function searchBible(query, translation = 'WEB', limit = 30) {
   const allBooks = await Promise.all(
     BIBLE_BOOKS.map(async (book) => ({
       book,
-      data: await loadBook(book.id, translation),
+      data: await loadBook(book.id, activeTranslation),
     }))
   )
 
@@ -203,36 +337,7 @@ export async function searchBible(query, translation = 'WEB', limit = 30) {
   for (const { book, data } of allBooks) {
     for (const [ch, verses] of Object.entries(data)) {
       for (const [vs, text] of Object.entries(verses)) {
-        const textLower = text.toLowerCase()
-        let score = 0
-
-        if (textLower.includes(lower)) {
-          score = 3
-        } else if (queryWords.length > 1 && queryWords.every(w => textLower.includes(w))) {
-          score = 2
-        } else if (queryWords.length > 1) {
-          const matches = queryWords.filter(w => textLower.includes(w))
-          if (matches.length >= Math.ceil(queryWords.length * 0.6)) {
-            score = 1 + (matches.length / queryWords.length)
-          }
-        } else if (queryWords.length === 1) {
-          const qw = queryWords[0]
-          const textWords = textLower.split(/\s+/)
-          if (textWords.some(tw => tw.startsWith(qw))) {
-            score = 1.5
-          } else if (qw.length >= 4) {
-            const hasFuzzy = textWords.some(tw => {
-              if (Math.abs(tw.length - qw.length) > 2) return false
-              let diff = 0
-              for (let i = 0; i < Math.min(tw.length, qw.length); i++) {
-                if (tw[i] !== qw[i]) diff++
-                if (diff > 1) return false
-              }
-              return diff + Math.abs(tw.length - qw.length) <= 1
-            })
-            if (hasFuzzy) score = 0.5
-          }
-        }
+        const score = scoreVerseText(text, lower, queryWords)
 
         if (score > 0) {
           const ref = `${book.id}.${ch}.${vs}`
@@ -297,13 +402,17 @@ export async function searchBible(query, translation = 'WEB', limit = 30) {
   return { verses: merged.slice(0, limit), total: merged.length }
 }
 
-// Get/set translation preference
+// Get/set translation preference. Unknown or removed codes fall back to BSB.
 export function getTranslation() {
-  return localStorage.getItem('bic_translation') || 'WEB'
+  const saved = localStorage.getItem('bic_translation')
+  if (saved && AVAILABLE_TRANSLATIONS.includes(saved)) return saved
+  return DEFAULT_TRANSLATION
 }
 
 export function setTranslation(translation) {
-  localStorage.setItem('bic_translation', translation)
+  const next = AVAILABLE_TRANSLATIONS.includes(translation) ? translation : DEFAULT_TRANSLATION
+  localStorage.setItem('bic_translation', next)
+  window.dispatchEvent(new CustomEvent('bic-translation', { detail: next }))
 }
 
 export function getTranslationName(code) {

@@ -7,13 +7,13 @@ function Privacy() {
         <Link to="/" className="text-sm text-[var(--accent-secondary)] mb-6 inline-block">← Bible in Context</Link>
 
         <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
-        <p className="text-sm text-[var(--text-muted)] mb-8">Last updated: May 20, 2026</p>
+        <p className="text-sm text-[var(--text-muted)] mb-8">Last updated: October 20, 2026</p>
 
         <div className="space-y-6 text-sm leading-relaxed text-[var(--text-secondary)]">
           <section>
             <h2 className="text-lg font-bold text-[var(--text-primary)] mb-2">Summary</h2>
             <p>
-              Bible in Context is a free Bible-study app. We do not sell or share your data with advertisers. We collect only what we need to let you sign in and sync your study work across your devices. You can use the app anonymously without an account; an account is optional.
+              Bible in Context is a free Bible-study app. We do not sell or share your data with advertisers. Opening the app requires a sign-in with Apple or Google. We collect only what we need to keep you signed in and sync your study work across your devices.
             </p>
           </section>
 
@@ -65,7 +65,7 @@ function Privacy() {
             <h2 className="text-lg font-bold text-[var(--text-primary)] mb-2">Your rights</h2>
             <ul className="list-disc list-inside space-y-1 pl-2">
               <li><strong>Delete your account at any time.</strong> Open the app → Profile → Delete Account. This permanently removes your profile and all associated notes, highlights, bookmarks, prayers, plans, and follow relationships from our database.</li>
-              <li><strong>Use the app without an account.</strong> All study tools work fully offline without signing in. Your study work is stored locally on your device only.</li>
+              <li><strong>Stay signed in.</strong> The app keeps the Apple or Google account you used. Your study work syncs to that account.</li>
               <li><strong>Export your data.</strong> Contact us and we'll send you a copy of everything we have on you within 30 days.</li>
             </ul>
           </section>

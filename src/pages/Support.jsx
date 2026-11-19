@@ -30,12 +30,12 @@ function Support() {
             <div className="space-y-4 mt-3">
               <div>
                 <p className="font-semibold text-[var(--text-primary)]">Do I need an account to use the app?</p>
-                <p className="mt-1">No. Signing in is optional. The app is fully functional without an account — Bible reading, cross-references, Greek/Hebrew lexicon, notes, highlights, bookmarks, and reading plans all work offline. Sign-in only enables optional cross-device sync.</p>
+                <p className="mt-1">Yes. Sign in with Apple or Google to open the app. If you are already signed in, the app opens straight to your Bible and you stay signed in on this device.</p>
               </div>
 
               <div>
                 <p className="font-semibold text-[var(--text-primary)]">Which Bible translations are included?</p>
-                <p className="mt-1">World English Bible (WEB), King James Version (KJV), and American Standard Version (ASV). All three are bundled with the app and work offline.</p>
+                <p className="mt-1">Berean Standard Bible (BSB), World English Bible (WEB), King James Version (KJV), American Standard Version (ASV), and Young&apos;s Literal Translation (YLT). All five are bundled with the app and work offline.</p>
               </div>
 
               <div>

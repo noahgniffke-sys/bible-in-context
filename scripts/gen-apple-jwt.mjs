@@ -1,10 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { createSign, createPrivateKey } from 'node:crypto';
 
-const TEAM_ID = 'T5C7G8A7GP';
-const KEY_ID = 'YOUR_KEY_ID';
-const SERVICES_ID = 'com.noahgniffke.bibleincontext.signin';
-const P8_PATH = '';
+const TEAM_ID = process.env.APPLE_TEAM_ID;
+const KEY_ID = process.env.APPLE_KEY_ID;
+const SERVICES_ID = process.env.APPLE_SERVICES_ID || 'com.noahgniffke.bibleincontext.signin';
+const P8_PATH = process.env.APPLE_KEY_PATH;
+
+if (!TEAM_ID || !KEY_ID || !P8_PATH) {
+  console.error('Set APPLE_TEAM_ID, APPLE_KEY_ID, and APPLE_KEY_PATH to your Apple key. The .p8 file stays off this repo.');
+  process.exit(1);
+}
 
 const now = Math.floor(Date.now() / 1000);
 const sixMonths = 60 * 60 * 24 * 180;

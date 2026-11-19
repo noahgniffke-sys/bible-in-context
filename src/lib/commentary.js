@@ -1,4 +1,4 @@
-// Commentary lookup — Matthew Henry's Concise Commentary (public domain)
+// Commentary lookup — John Gill's Exposition (public domain). The verse page calls this Deeper study.
 // Data files are loaded per-book via dynamic import.
 // Run `node scripts/prepare-data.js` to download and split commentary data.
 

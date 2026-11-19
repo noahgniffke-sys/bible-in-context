@@ -23,10 +23,15 @@ function Feed() {
   useEffect(() => {
     if (user) loadFeed()
     else setLoading(false)
+    function onVisible() {
+      if (document.visibilityState === 'visible' && user) loadFeed(true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [user])
 
-  async function loadFeed() {
-    setLoading(true)
+  async function loadFeed(quiet = false) {
+    if (!quiet) setLoading(true)
     setError(null)
     try {
       // Get users I follow

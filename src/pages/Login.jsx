@@ -1,28 +1,53 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { Link, useNavigate } from 'react-router-dom'
+import { supabase, getProfile } from '../lib/supabase'
 import { Capacitor } from '@capacitor/core'
 import ErrorBanner from '../components/ErrorBanner'
 import BackButton from '../components/BackButton'
+import CrossMark from '../components/CrossMark'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 let socialLoginInitialized = false
 async function ensureSocialLoginInitialized() {
   if (socialLoginInitialized) return
+  const iosClientId = import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID
+  const webClientId = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID
+  if (!iosClientId || !webClientId) {
+    throw new Error('Google sign-in is missing its client ID. Add the iOS and Web client IDs to the app build.')
+  }
   const { SocialLogin } = await import('@capgo/capacitor-social-login')
   await SocialLogin.initialize({
     apple: {
       clientId: 'com.noahgniffke.bibleincontext',
     },
     google: {
-      iOSClientId: import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID,
-      webClientId: import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID,
+      iOSClientId: iosClientId,
+      // Supabase checks the token audience against the Web client, not the iOS client.
+      iOSServerClientId: webClientId,
+      webClientId,
+      mode: 'online',
     },
   })
   socialLoginInitialized = true
 }
 
-function Login() {
+function cancelledSignIn(err) {
+  const msg = `${err?.message || ''} ${err?.errorMessage || ''}`.toLowerCase()
+  return msg.includes('cancel') || err?.code === 12501 || err?.code === '-5' || err?.code === 1001
+}
+
+async function destinationAfterSignIn(user) {
+  if (!user?.id) return '/complete-profile'
+  let profile = null
+  for (let attempt = 0; attempt < 4; attempt++) {
+    profile = (await getProfile(user.id)).data
+    if (profile) break
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  return profile?.profile_setup_complete ? '/' : '/complete-profile'
+}
+
+function Login({ required = false }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
@@ -44,26 +69,30 @@ function Login() {
           },
         })
 
-        if (result?.result?.idToken) {
-          const { error: authError } = await supabase.auth.signInWithIdToken({
-            provider: 'google',
-            token: result.result.idToken,
-          })
-          if (authError) throw authError
-          navigate('/')
+        const idToken = result?.result?.idToken || result?.idToken
+        if (!idToken) {
+          throw new Error('Google did not return a sign-in token. Try again, and confirm the Web client ID in Supabase matches this app.')
         }
+        const { data, error: authError } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        })
+        if (authError) throw authError
+        navigate(await destinationAfterSignIn(data?.user))
       } else {
         // Web: redirect to Google OAuth
         const { error: authError } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
             redirectTo: `${window.location.origin}/auth/callback`,
+            queryParams: { prompt: 'select_account' },
           },
         })
         if (authError) throw authError
       }
     } catch (err) {
-      setError(err.message || 'Failed to sign in with Google')
+      socialLoginInitialized = false
+      if (!cancelledSignIn(err)) setError(err.message || 'Failed to sign in with Google')
     } finally {
       setLoading(false)
     }
@@ -85,14 +114,16 @@ function Login() {
           },
         })
 
-        if (result?.result?.idToken) {
-          const { error: authError } = await supabase.auth.signInWithIdToken({
-            provider: 'apple',
-            token: result.result.idToken,
-          })
-          if (authError) throw authError
-          navigate('/')
+        const idToken = result?.result?.idToken
+        if (!idToken) {
+          throw new Error('Apple did not return a sign-in token. Try again.')
         }
+        const { data, error: authError } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: idToken,
+        })
+        if (authError) throw authError
+        navigate(await destinationAfterSignIn(data?.user))
       } else {
         const { error: authError } = await supabase.auth.signInWithOAuth({
           provider: 'apple',
@@ -103,7 +134,8 @@ function Login() {
         if (authError) throw authError
       }
     } catch (err) {
-      setError(err.message || 'Failed to sign in with Apple')
+      socialLoginInitialized = false
+      if (!cancelledSignIn(err)) setError(err.message || 'Failed to sign in with Apple')
     } finally {
       setLoading(false)
     }
@@ -112,26 +144,25 @@ function Login() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <BackButton label="Back" to="/" />
+        {!required && <BackButton label="Back" to="/" />}
 
         {/* Logo + wordmark */}
         <div className="text-center my-8">
           <div
-            className="text-6xl mb-4 inline-block"
+            className="mb-4 inline-flex"
             style={{
               color: 'var(--gold-accent)',
-              textShadow: '0 0 24px var(--gold-glow)',
-              filter: 'drop-shadow(0 4px 8px var(--accent-glow))',
+              filter: 'drop-shadow(0 0 24px var(--gold-glow)) drop-shadow(0 4px 8px var(--accent-glow))',
             }}
           >
-            {'✞'}
+            <CrossMark size={64} />
           </div>
           <h1 className="brand-wordmark text-2xl mb-2">
             Bible in Context
           </h1>
           <div className="themed-divider my-3" style={{ width: '40%' }} />
           <p className="text-[var(--text-secondary)] text-sm italic" style={{ fontFamily: 'var(--font-body)' }}>
-            Sign in to sync your notes, highlights, and prayers across devices.
+            Sign in with Google or Apple.
           </p>
         </div>
 
@@ -168,7 +199,9 @@ function Login() {
         </div>
 
         <p className="text-xs text-[var(--text-muted)] text-center mt-6">
-          Signing in is optional. The app works fully without an account.
+          <Link to="/privacy" className="underline">Privacy Policy</Link>
+          <span className="mx-2">·</span>
+          <Link to="/support" className="underline">Support</Link>
         </p>
       </div>
     </div>

@@ -1,6 +1,6 @@
 # Bible in Context
 
-A free, in-depth iOS Bible study app. Cross-references, Greek/Hebrew with Strong's, commentary (Matthew Henry, JFB, Tyndale), community plans, social study sharing.
+A free, in-depth iOS Bible study app. Cross-references, Greek/Hebrew with Strong's, commentary (John Gill, JFB, Tyndale), community plans, social study sharing.
 
 **Live web build:** https://bible-in-context.vercel.app
 

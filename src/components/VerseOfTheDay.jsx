@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getVerseOfTheDay, msUntilNextPSTMidnight } from '../lib/verse-of-day'
+import { getTranslation, getVerse } from '../lib/bible-api'
+import { ensureDailyVerseNotification } from '../lib/daily-verse-notification'
 import { triggerHaptic, HapticStyle } from '../lib/haptics'
 
 function VerseOfTheDay() {
@@ -8,31 +10,49 @@ function VerseOfTheDay() {
   const [verse, setVerse] = useState(() => getVerseOfTheDay())
   const [showStudy, setShowStudy] = useState(false)
 
-  // Refresh at PST midnight, and also when the tab becomes visible again.
+  // The passage is fixed for the day. The wording follows the open translation.
   useEffect(() => {
+    let cancelled = false
+    async function loadText() {
+      const base = getVerseOfTheDay()
+      const translation = getTranslation()
+      let text = base?.text
+      if (base) {
+        const loaded = await getVerse(base.bookId, base.chapter, base.verse, translation)
+        if (loaded?.text) text = loaded.text
+      }
+      if (!cancelled && base) setVerse({ ...base, text, translation })
+    }
+    loadText()
+
     let timeoutId
     function scheduleRefresh() {
       const ms = msUntilNextPSTMidnight()
       timeoutId = setTimeout(() => {
-        setVerse(getVerseOfTheDay())
+        loadText()
+        ensureDailyVerseNotification().catch(() => {})
         scheduleRefresh()
       }, ms)
     }
     scheduleRefresh()
 
     function onVisibility() {
-      if (document.visibilityState === 'visible') {
-        const fresh = getVerseOfTheDay()
-        if (fresh && fresh.dateKey !== verse?.dateKey) setVerse(fresh)
-      }
+      if (document.visibilityState === 'visible') loadText()
+    }
+    function onTranslation() {
+      loadText()
+      ensureDailyVerseNotification().catch(() => {})
     }
     document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('bic-translation', onTranslation)
 
     return () => {
+      cancelled = true
       clearTimeout(timeoutId)
       document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('bic-translation', onTranslation)
     }
-  }, [verse?.dateKey])
+  }, [])
 
   if (!verse) return null
 
@@ -62,9 +82,9 @@ function VerseOfTheDay() {
             className="text-[10px] uppercase tracking-[0.3em] font-bold display"
             style={{ color: 'var(--gold-accent)', fontFamily: 'var(--font-display)' }}
           >
-            ✦ Verse of the Day ✦
+            Verse of the Day
           </p>
-          <span className="verse-ref text-xs">{verse.ref}</span>
+          <span className="verse-ref text-xs">{verse.ref}{verse.translation ? ` · ${verse.translation}` : ''}</span>
         </div>
 
         <button
@@ -78,7 +98,7 @@ function VerseOfTheDay() {
             "{verse.text}"
           </p>
           <p className="text-xs text-[var(--accent-light)] font-medium mt-2 tracking-wide">
-            Open in Bible →
+            Open in Bible
           </p>
         </button>
 

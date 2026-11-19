@@ -5,7 +5,7 @@
  * Downloads and processes public domain Bible reference data:
  * - Treasury of Scripture Knowledge (cross-references)
  * - Strong's Concordance (Greek/Hebrew lexicons)
- * - Matthew Henry's Concise Commentary
+ * - John Gill's Exposition (stored as the Deeper study commentary)
  *
  * Usage: node scripts/prepare-data.js
  *
@@ -132,7 +132,7 @@ async function prepareStrongs() {
 // ─── Commentary ─────────────────────────────────────────────────
 
 async function prepareCommentary() {
-  console.log('\n📝 Preparing Matthew Henry\'s Commentary...')
+  console.log('\n📝 Preparing John Gill\'s Exposition...')
   const commentaryDir = path.join(DATA_DIR, 'commentary')
   ensureDir(commentaryDir)
 

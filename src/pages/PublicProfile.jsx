@@ -45,23 +45,44 @@ function PublicProfile() {
     loadProfile()
   }, [username])
 
-  // Live follower count subscription — disabled until Realtime is enabled
-  // on the profiles table in Supabase. Re-enable after running the SQL.
-  // useEffect(() => {
-  //   if (!profile?.id) return
-  //   const channel = supabase
-  //     .channel(`profile-${profile.id}`)
-  //     .on('postgres_changes', {
-  //       event: 'UPDATE',
-  //       schema: 'public',
-  //       table: 'profiles',
-  //       filter: `id=eq.${profile.id}`,
-  //     }, (payload) => {
-  //       if (payload.new) setProfile((prev) => ({ ...(prev || {}), ...payload.new }))
-  //     })
-  //     .subscribe()
-  //   return () => { supabase.removeChannel(channel) }
-  // }, [profile?.id])
+  useEffect(() => {
+    if (!profile?.id) return
+    const channel = supabase
+      .channel(`profile-${profile.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${profile.id}`,
+      }, (payload) => {
+        if (payload.new) setProfile((prev) => ({ ...(prev || {}), ...payload.new }))
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'follows',
+        filter: `following_id=eq.${profile.id}`,
+      }, async () => {
+        const { data } = await supabase
+          .from('profiles')
+          .select('followers_count, following_count')
+          .eq('id', profile.id)
+          .limit(1)
+        const row = data?.[0]
+        if (row) setProfile((prev) => (prev ? { ...prev, ...row } : prev))
+        if (user) {
+          const { data: followRows } = await supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', user.id)
+            .eq('following_id', profile.id)
+            .limit(1)
+          setInitialFollowing(Boolean(followRows?.length))
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [profile?.id, user])
 
   async function loadProfile() {
     setLoading(true)
@@ -231,24 +252,49 @@ function PublicProfile() {
         )}
 
         <div className="flex justify-center gap-6 mt-3">
-          <div>
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic(HapticStyle.LIGHT)
+              navigate(`/u/${profile.username}/followers`)
+            }}
+            className="min-h-[44px] px-2 active:scale-95"
+          >
             <span className="block text-lg font-bold text-[var(--text-primary)]">{profile.followers_count || 0}</span>
             <span className="text-xs text-[var(--text-muted)]">Followers</span>
-          </div>
-          <div>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic(HapticStyle.LIGHT)
+              navigate(`/u/${profile.username}/following`)
+            }}
+            className="min-h-[44px] px-2 active:scale-95"
+          >
             <span className="block text-lg font-bold text-[var(--text-primary)]">{profile.following_count || 0}</span>
             <span className="text-xs text-[var(--text-muted)]">Following</span>
-          </div>
+          </button>
         </div>
 
         {!isOwnProfile && user && (
           <>
             <button
-              onClick={toggleFollow}
+              onClick={async () => {
+                const wasFollowing = isFollowing
+                const ok = await toggleFollow()
+                if (!ok) {
+                  toast.error('Could not update follow. Check your connection and try again.')
+                  return
+                }
+                setProfile((prev) => prev ? {
+                  ...prev,
+                  followers_count: Math.max(0, (prev.followers_count || 0) + (wasFollowing ? -1 : 1)),
+                } : prev)
+              }}
               disabled={followLoading}
               className={isFollowing ? 'themed-btn mt-4 px-6 py-2 text-sm' : 'themed-btn-primary mt-4 px-6 py-2 text-sm'}
             >
-              {isFollowing ? 'Following' : 'Follow'}
+              {followLoading ? 'Saving…' : isFollowing ? 'Following' : 'Follow'}
             </button>
             <div className="flex justify-center gap-4 mt-3 text-xs text-[var(--text-muted)]">
               <button onClick={handleReport} className="hover:text-[var(--text-secondary)] transition-colors">

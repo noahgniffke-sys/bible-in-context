@@ -13,6 +13,7 @@ import { triggerHaptic, HapticStyle } from '../lib/haptics'
 import useUserData from '../hooks/useUserData'
 import useLocalStorage from '../hooks/useLocalStorage'
 import { VERSE_FONT_SIZES, DEFAULT_FONT_SIZE_INDEX, clampFontSizeIndex, applyVerseFontSize } from '../lib/fontSize'
+import { modernizeProse } from '../lib/strongs'
 
 function ChapterView() {
   const { bookId, chapter } = useParams()
@@ -387,7 +388,7 @@ function ChapterView() {
           <div role="button" onClick={() => { setShowSummary(!showSummary); triggerHaptic(HapticStyle.LIGHT) }}
             className="flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg px-4 py-3 cursor-pointer"
             style={{ minHeight: 'auto', minWidth: 'auto' }}>
-            <span className="text-sm font-medium text-[var(--accent-secondary)]">📖 Chapter Summary</span>
+            <span className="text-sm font-medium text-[var(--accent-secondary)]">Chapter summary</span>
             <svg viewBox="0 0 24 24" fill="none" className={`w-4 h-4 text-[var(--text-muted)] transition-transform ${showSummary ? 'rotate-90' : ''}`}>
               <path d="M9 5L16 12L9 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -398,7 +399,7 @@ function ChapterView() {
                 {chapterSummary.map((point, idx) => (
                   <li key={idx} className="flex gap-2 text-sm text-[var(--text-primary)] leading-relaxed">
                     <span className="text-[var(--accent-secondary)] mt-0.5 flex-shrink-0">•</span>
-                    <span>{point}</span>
+                    <span>{modernizeProse(point)}</span>
                   </li>
                 ))}
               </ul>
@@ -413,7 +414,7 @@ function ChapterView() {
           <div role="button" onClick={toggleCommentary}
             className="flex items-center justify-between bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg px-4 py-3 cursor-pointer"
             style={{ minHeight: 'auto', minWidth: 'auto' }}>
-            <span className="text-sm font-medium text-[var(--accent-secondary)]">✝️ Show Commentary</span>
+            <span className="text-sm font-medium text-[var(--accent-secondary)]">Show commentary</span>
             <span className={`text-xs px-2 py-1 rounded-full ${showCommentary ? 'bg-[var(--accent-secondary)] text-white' : 'bg-[var(--bg-surface)] text-[var(--text-muted)]'}`}>
               {showCommentary ? 'ON' : 'OFF'}
             </span>
@@ -472,7 +473,7 @@ function ChapterView() {
         </div>
       ) : (
         <div className="space-y-1">
-          {verses.map((verse) => {
+          {verses.map((verse, idx) => {
             const highlightColor = getHighlightColor(verse.ref)
             const noteExists = hasNote(verse.ref)
             const isSelected = selectedVerses.has(verse.ref)

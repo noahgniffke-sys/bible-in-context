@@ -165,7 +165,7 @@ function Search() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={tab === 'verses' ? 'Search verses, topics, words...' : 'Search by username or name...'}
+            placeholder={tab === 'verses' ? 'Try John 3:16, or a sentence even if a few words are off' : 'Search by username or name...'}
             className="flex-1 bg-[var(--bg-surface)] border border-[var(--border-primary)] rounded-xl px-4 py-3 text-[var(--text-primary)] text-sm placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-secondary)]"
           />
           {tab === 'verses' && (
@@ -197,7 +197,7 @@ function Search() {
               </button>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-1 italic">
-              Handles misspellings and partial words
+              Looks up a passage, a whole verse, or words with a few mistakes.
             </p>
           </>
         )}
@@ -277,7 +277,7 @@ function Search() {
           <EmptyState
             emoji="📖"
             title="Search the Bible"
-            description="Enter a word, phrase, or topic to find relevant verses. Handles misspellings too."
+            description="Type a reference like John 3:16, or the words of a verse. A few wrong words are fine."
           />
         ) : null
       )}

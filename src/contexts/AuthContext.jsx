@@ -44,24 +44,41 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  // Live profile updates via Realtime — only attach if Realtime is enabled
-  // (otherwise the subscription connects but the channel just sits idle).
-  // Disabled until we confirm Realtime publication is active on the project.
-  // useEffect(() => {
-  //   if (!user?.id) return
-  //   const channel = supabase
-  //     .channel(`profile-self-${user.id}`)
-  //     .on('postgres_changes', {
-  //       event: 'UPDATE',
-  //       schema: 'public',
-  //       table: 'profiles',
-  //       filter: `id=eq.${user.id}`,
-  //     }, (payload) => {
-  //       if (payload.new) setProfile((prev) => ({ ...(prev || {}), ...payload.new }))
-  //     })
-  //     .subscribe()
-  //   return () => { supabase.removeChannel(channel) }
-  // }, [user?.id])
+  // Follow counts and profile fields stay in sync across devices.
+  // This stays quiet if Realtime is not published yet; opening the app still refreshes.
+  useEffect(() => {
+    if (!user?.id) return
+
+    function onVisible() {
+      if (document.visibilityState === 'visible') loadProfile(user.id)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
+    const channel = supabase
+      .channel(`profile-self-${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles',
+        filter: `id=eq.${user.id}`,
+      }, (payload) => {
+        if (payload.new) setProfile((prev) => ({ ...(prev || {}), ...payload.new }))
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'follows',
+        filter: `follower_id=eq.${user.id}`,
+      }, () => {
+        loadProfile(user.id)
+      })
+      .subscribe()
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id])
 
   async function loadProfile(userId) {
     try {

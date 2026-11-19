@@ -6,7 +6,11 @@ import { getVerse, getChapter, getTranslation, getVersesForStrongs } from '../li
 import { getCrossReferences } from '../lib/tsk'
 import { getStudyNote } from '../lib/study'
 import { getJFBCommentary } from '../lib/jfb'
-import { getStrongsForVerse, getLanguageForBook, adaptWordsToTranslation, generatePhraseByPhrase, detectVerseType, generatePlainEnglish, getEtymologyBreakdown } from '../lib/strongs'
+import { getStrongsForVerse, getRawChapterWords, getLanguageForBook, adaptWordsToTranslation, generatePhraseByPhrase, detectVerseType, generatePlainEnglish, getEtymologyBreakdown, modernizeProse } from '../lib/strongs'
+import { detectPassageStyle } from '../lib/passage-style'
+import { getLexiconNote } from '../lib/lexicon-notes'
+import PassageStyleCard from '../components/PassageStyleCard'
+import LexiconNote from '../components/LexiconNote'
 import { getCommentary } from '../lib/commentary'
 import { shareVerse, copyVerse } from '../lib/share'
 import { getBiblicalConnections } from '../lib/connections'
@@ -38,8 +42,10 @@ function VerseContext() {
   const [wordPopup, setWordPopup] = useState(null) // index of word to show popup for
   const [wordExamples, setWordExamples] = useState(null) // { strongs, examples, total, loading } | null
   const [wordEtymology, setWordEtymology] = useState(null) // { strongs, rawPhrase, components } | null
+  const [wordLexicon, setWordLexicon] = useState(null) // { strongs, note } | null
   const [refTexts, setRefTexts] = useState({})
   const [loading, setLoading] = useState(true)
+  const [passageStyle, setPassageStyle] = useState(null)
   const [activeSection, setActiveSection] = useState('context')
   const [totalVerses, setTotalVerses] = useState(0)
 
@@ -67,6 +73,7 @@ function VerseContext() {
   useEffect(() => {
     async function loadData() {
       setLoading(true)
+      setPassageStyle(null)
       setExpandedRefs({})
       setRefTexts({})
       const results = await Promise.allSettled([
@@ -77,6 +84,7 @@ function VerseContext() {
         getChapter(bookId, chapterNum, translation),
         getStudyNote(verseRef),
         getJFBCommentary(verseRef),
+        getRawChapterWords(bookId, chapterNum),
       ])
 
       const loadedVerse = results[0].status === 'fulfilled' ? results[0].value : null
@@ -92,6 +100,16 @@ function VerseContext() {
       }
       setStudyNote(results[5].status === 'fulfilled' ? results[5].value : null)
       setJfbNote(results[6].status === 'fulfilled' ? results[6].value : null)
+      const chapterWords = results[7].status === 'fulfilled' ? results[7].value : null
+      setPassageStyle(chapterWords
+        ? detectPassageStyle({
+          bookId,
+          chapter: chapterNum,
+          verse: verseNum,
+          verses: chapterWords,
+          bookName: book?.name || bookId,
+        })
+        : { patterns: [] })
       setLoading(false)
 
       // Save reading position
@@ -100,7 +118,7 @@ function VerseContext() {
       localStorage.setItem('bic_last_verse', String(verseNum))
     }
     loadData()
-  }, [bookId, chapterNum, verseNum, verseRef, translation])
+  }, [bookId, chapterNum, verseNum, verseRef, translation, book?.name])
 
   // Load cross-verse examples whenever the word popup opens on a new word.
   // Loading state is derived at render time, so no synchronous setState here.
@@ -127,6 +145,20 @@ function VerseContext() {
     })()
     return () => { cancelled = true }
   }, [wordPopup, strongsWords, verseRef, translation])
+
+  // Longer lexicon note (Thayer or Brown-Driver-Briggs) for the open word.
+  useEffect(() => {
+    if (wordPopup === null) return
+    const w = strongsWords[wordPopup]
+    if (!w?.strongs) return
+    const targetStrongs = w.strongs
+    let cancelled = false
+    ;(async () => {
+      const note = await getLexiconNote(targetStrongs)
+      if (!cancelled) setWordLexicon({ strongs: targetStrongs, note })
+    })()
+    return () => { cancelled = true }
+  }, [wordPopup, strongsWords])
 
   // Load etymology (compound word breakdown) whenever the popup opens on a new word.
   useEffect(() => {
@@ -450,7 +482,7 @@ function VerseContext() {
           <div className="flex gap-2">
             <button
               onClick={saveBookmark}
-              className="flex-1 py-2 rounded-lg bg-[var(--gold-accent)] text-black font-medium text-sm active:scale-95"
+              className="flex-1 py-2 rounded-lg bg-[var(--gold-accent)] text-[var(--on-gold)] font-medium text-sm active:scale-95"
             >
               Save Bookmark
             </button>
@@ -558,6 +590,14 @@ function VerseContext() {
         </div>
       )}
 
+      {!loading && (
+        <PassageStyleCard
+          style={passageStyle}
+          currentVerse={verseNum}
+          onOpenVerse={goToVerse}
+        />
+      )}
+
       {/* Section tabs */}
       <div className="flex gap-2 mb-4">
         {SECTIONS.map(s => (
@@ -589,13 +629,13 @@ function VerseContext() {
               {studyNote && (
                 <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
                   <h3 className="text-xs font-bold text-[var(--accent-secondary)] uppercase tracking-wide mb-3">
-                    📖 What This Verse Means
+                    What this verse means
                   </h3>
                   <ul className="space-y-2">
                     {getCommentaryBullets(studyNote).map((bullet, idx) => (
                       <li key={idx} className="flex gap-2 text-sm text-[var(--text-primary)] leading-relaxed">
                         <span className="text-[var(--accent-secondary)] mt-1 flex-shrink-0">•</span>
-                        <span>{expandBookNames(bullet)}</span>
+                        <span>{modernizeProse(expandBookNames(bullet))}</span>
                       </li>
                     ))}
                   </ul>
@@ -606,13 +646,13 @@ function VerseContext() {
               {jfbNote && (
                 <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
                   <h3 className="text-xs font-bold text-[var(--accent-secondary)] uppercase tracking-wide mb-3">
-                    ✝️ Biblical Commentary
+                    Biblical commentary
                   </h3>
                   <ul className="space-y-2">
                     {getCommentaryBullets(jfbNote).map((bullet, idx) => (
                       <li key={idx} className="flex gap-2 text-sm text-[var(--text-primary)] leading-relaxed">
                         <span className="text-[var(--accent-secondary)] mt-1 flex-shrink-0">•</span>
-                        <span>{expandBookNames(bullet)}</span>
+                        <span>{modernizeProse(expandBookNames(bullet))}</span>
                       </li>
                     ))}
                   </ul>
@@ -623,13 +663,13 @@ function VerseContext() {
               {commentary && (
                 <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
                   <h3 className="text-xs font-bold text-[var(--accent-secondary)] uppercase tracking-wide mb-3">
-                    📜 Deeper Study
+                    Deeper study
                   </h3>
                   <ul className="space-y-2">
                     {getCommentaryBullets(commentary).map((bullet, idx) => (
                       <li key={idx} className="flex gap-2 text-sm text-[var(--text-primary)] leading-relaxed">
                         <span className="text-[var(--accent-secondary)] mt-1 flex-shrink-0">•</span>
-                        <span>{expandBookNames(bullet)}</span>
+                        <span>{modernizeProse(expandBookNames(bullet))}</span>
                       </li>
                     ))}
                   </ul>
@@ -640,13 +680,13 @@ function VerseContext() {
               {verseData?.text && getBiblicalConnections(verseData.text, bookId, chapterNum, verseNum).length > 0 && (
                 <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
                   <h3 className="text-xs font-bold text-[var(--accent-secondary)] uppercase tracking-wide mb-3">
-                    🔗 Related Biblical Connections
+                    Related connections
                   </h3>
                   <div className="space-y-3">
                     {getBiblicalConnections(verseData.text, bookId, chapterNum, verseNum).map((conn, idx) => (
                       <div key={idx}>
                         <p className="text-sm font-bold text-[var(--gold-accent)] mb-1">{conn.title}</p>
-                        <p className="text-sm text-[var(--text-primary)] leading-relaxed">{expandBookNames(conn.text)}</p>
+                        <p className="text-sm text-[var(--text-primary)] leading-relaxed">{modernizeProse(expandBookNames(conn.text))}</p>
                       </div>
                     ))}
                   </div>
@@ -656,7 +696,7 @@ function VerseContext() {
               {/* Reflection */}
               <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl p-4">
                 <h3 className="text-xs font-bold text-[var(--accent-secondary)] uppercase tracking-wide mb-3">
-                  🙏 Reflect & Apply
+                  Reflect and apply
                 </h3>
                 <ul className="space-y-2 text-sm text-[var(--text-secondary)] leading-relaxed">
                   <li className="flex gap-2">
@@ -728,12 +768,12 @@ function VerseContext() {
 
               {/* What This Verse Is Saying — plain-English, self-contained */}
               {(() => {
-                const pe = generatePlainEnglish(verseData?.text, strongsWords, language)
+                const pe = generatePlainEnglish(verseData?.text, strongsWords, language, bookId)
                 if (!pe.simplified && pe.insights.length === 0) return null
                 return (
                   <div className="bg-[var(--bg-card)] border border-[var(--gold-accent)] rounded-xl p-4">
                     <h3 className="text-xs font-bold text-[var(--gold-accent)] mb-2 uppercase tracking-wide">
-                      💡 What This Verse Is Saying
+                      What this verse is saying
                     </h3>
                     {pe.simplified && (
                       <>
@@ -827,6 +867,17 @@ function VerseContext() {
                         <p className="text-xs text-[var(--text-primary)] mt-1 pt-1 border-t border-[var(--border-subtle)]">
                           {w.simpleDefinition}
                         </p>
+                      )}
+
+                      {wordLexicon?.strongs === w.strongs && wordLexicon.note && (
+                        <LexiconNote
+                          note={wordLexicon.note}
+                          compact
+                          onOpen={() => {
+                            triggerHaptic(HapticStyle.LIGHT)
+                            navigate(`/lexicon/${w.strongs}`)
+                          }}
+                        />
                       )}
 
                       {/* Etymology / compound word breakdown — "built from G575 + G2644" */}
